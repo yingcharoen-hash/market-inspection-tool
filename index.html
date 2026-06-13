@@ -26,6 +26,8 @@
   .field input{width:100%; border:none; border-radius:10px; padding:10px 11px; font-size:14px; background:rgba(255,255,255,.14); color:#fff; font-family:inherit;}
   .field input::placeholder{color:rgba(255,255,255,.55);}
   .field input[type=date]{color-scheme:dark;}
+  .field select{width:100%; border:none; border-radius:10px; padding:10px 11px; font-size:14px; background:rgba(255,255,255,.14); color:#fff; font-family:inherit; appearance:none; -webkit-appearance:none;}
+  .field select option{color:#1d1d1f;}
 
   .date-display{font-size:12px; color:rgba(255,255,255,.7); margin-top:10px;}
 
@@ -135,7 +137,9 @@
   <div class="sub-row">
     <div class="field">
       <label>ผู้ตรวจ (ชื่อ รปภ.)</label>
-      <input type="text" id="guardName" placeholder="พิมพ์ชื่อ-นามสกุล">
+      <select id="guardName">
+        <option value="">— เลือกชื่อผู้ตรวจ —</option>
+      </select>
     </div>
     <div class="field">
       <label>วันที่ตรวจ</label>
@@ -184,7 +188,7 @@
     <div id="zonesContainer1"></div>
 
     <div class="actions">
-      <button class="btn btn-primary" onclick="sendToGoogleSheet()">ส่งเข้า Google Sheet</button>
+      <button class="btn btn-primary" onclick="sendToGoogleSheet()">บันทึกข้อมูล</button>
       <button class="btn btn-secondary" onclick="resetTab('tab1')">ล้างข้อมูลแท็บนี้</button>
     </div>
   </div>
@@ -211,7 +215,7 @@
     </div>
 
     <div class="actions">
-      <button class="btn btn-primary" onclick="sendToGoogleSheet()">ส่งเข้า Google Sheet</button>
+      <button class="btn btn-primary" onclick="sendToGoogleSheet()">บันทึกข้อมูล</button>
       <button class="btn btn-secondary" onclick="resetTab('tab2')">ล้างข้อมูลแท็บนี้</button>
     </div>
   </div>
@@ -238,7 +242,7 @@
     </div>
 
     <div class="actions">
-      <button class="btn btn-primary" onclick="sendToGoogleSheet()">ส่งเข้า Google Sheet</button>
+      <button class="btn btn-primary" onclick="sendToGoogleSheet()">บันทึกข้อมูล</button>
       <button class="btn btn-secondary" onclick="resetTab('tab3')">ล้างข้อมูลแท็บนี้</button>
     </div>
   </div>
@@ -288,6 +292,7 @@ const ITEMS3 = [
 /* ========================= STATE ========================= */
 const STORAGE_KEY = "marketInspectionState";
 const GUARD_KEY = "marketInspectionGuardName";
+const GUARD_LIST_KEY = "marketInspectionGuardList";
 let state = loadState();
 
 function todayStr(){
@@ -298,6 +303,45 @@ function todayStr(){
 
 function lastGuardName(){
   try{ return localStorage.getItem(GUARD_KEY) || ""; }catch(e){ return ""; }
+}
+
+function setGuardSelectValue(){
+  const sel = document.getElementById("guardName");
+  const val = state.guardName || "";
+  if(Array.from(sel.options).some(o=>o.value===val)) sel.value = val;
+  else sel.value = "";
+}
+
+function populateGuardSelect(names){
+  const sel = document.getElementById("guardName");
+  sel.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "— เลือกชื่อผู้ตรวจ —";
+  sel.appendChild(placeholder);
+  names.forEach(n=>{
+    const opt = document.createElement("option");
+    opt.value = n; opt.textContent = n;
+    sel.appendChild(opt);
+  });
+  setGuardSelectValue();
+}
+
+async function loadGuardNames(){
+  let cached = [];
+  try{ cached = JSON.parse(localStorage.getItem(GUARD_LIST_KEY) || "[]"); }catch(e){}
+  if(cached.length) populateGuardSelect(cached);
+
+  try{
+    const res = await fetch(SHEET_URL);
+    const data = await res.json();
+    if(data && Array.isArray(data.names) && data.names.length){
+      populateGuardSelect(data.names);
+      try{ localStorage.setItem(GUARD_LIST_KEY, JSON.stringify(data.names)); }catch(e){}
+    }
+  }catch(err){
+    if(!cached.length) showToast("โหลดรายชื่อผู้ตรวจไม่ได้ ตรวจสอบอินเทอร์เน็ต");
+  }
 }
 
 function emptyState(date){
@@ -362,8 +406,8 @@ function getItems2ForZone(zone){
 
 /* ========================= INIT ========================= */
 document.getElementById("datePicker").value = state.date;
-document.getElementById("guardName").value = state.guardName || "";
 updateDateLabel();
+loadGuardNames();
 
 document.getElementById("datePicker").addEventListener("change", (e)=>{
   const newDate = e.target.value || todayStr();
@@ -371,7 +415,7 @@ document.getElementById("datePicker").addEventListener("change", (e)=>{
     if(confirm("เปลี่ยนวันที่จะรีเซ็ตข้อมูลการตรวจทั้งหมดของวันนี้ เริ่มบันทึกใหม่สำหรับวันที่เลือก ใช่หรือไม่?")){
       state = emptyState(newDate);
       saveState();
-      document.getElementById("guardName").value = state.guardName || "";
+      setGuardSelectValue();
       renderAll();
     } else {
       e.target.value = state.date;
@@ -380,7 +424,7 @@ document.getElementById("datePicker").addEventListener("change", (e)=>{
   updateDateLabel();
 });
 
-document.getElementById("guardName").addEventListener("input", (e)=>{
+document.getElementById("guardName").addEventListener("change", (e)=>{
   state.guardName = e.target.value;
   try{ localStorage.setItem(GUARD_KEY, e.target.value); }catch(err){}
   saveState();
@@ -831,7 +875,7 @@ function showToast(msg){
 /* ========================= RENDER ALL ========================= */
 function renderAll(){
   document.getElementById("datePicker").value = state.date;
-  document.getElementById("guardName").value = state.guardName || "";
+  setGuardSelectValue();
   updateDateLabel();
   renderTab1();
   populateZoneSelect2();
