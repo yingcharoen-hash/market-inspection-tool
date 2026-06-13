@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตลาดยิ่งเจริญ — เครื่องมือตรวจตลาดสด</title>
+<style>
+  :root{
+    --navy:#1b3a63; --navy-soft:#eef3f9;
+    --gold:#c8860a; --gold-soft:#fbf3e2;
+    --teal:#1f7a68; --teal-soft:#e9f6f2;
+    --bg:#f5f5f7; --card:#ffffff; --text:#1d1d1f; --muted:#86868b;
+    --border:#e4e4e7; --green:#34c759; --red:#ff3b30; --track:#e5e5ea;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Thai","Sarabun","Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--text); padding-bottom:48px; font-size:16px;
+  }
+
+  header{background:var(--navy); color:#fff; padding:18px 18px 14px;}
+  header h1{margin:0; font-size:19px; font-weight:600; letter-spacing:.2px;}
+  .sub-row{display:flex; gap:12px; margin-top:12px;}
+  .field{flex:1;}
+  .field label{display:block; font-size:11px; color:rgba(255,255,255,.65); margin-bottom:4px; font-weight:600; text-transform:uppercase; letter-spacing:.04em;}
+  .field input{width:100%; border:none; border-radius:10px; padding:10px 11px; font-size:14px; background:rgba(255,255,255,.14); color:#fff; font-family:inherit;}
+  .field input::placeholder{color:rgba(255,255,255,.55);}
+  .field input[type=date]{color-scheme:dark;}
+
+  .date-display{font-size:12px; color:rgba(255,255,255,.7); margin-top:10px;}
+
+  .tabs{
+    display:flex; gap:4px; background:var(--track); border-radius:12px; padding:4px;
+    margin:14px 14px 0; position:sticky; top:0; z-index:49;
+  }
+  .tab-btn{
+    flex:1; min-width:0; padding:10px 4px; text-align:center; border:none; background:transparent;
+    font-size:14px; font-weight:600; color:var(--muted); cursor:pointer; border-radius:9px;
+    white-space:nowrap; transition:background .15s, color .15s;
+  }
+  .tab-btn.active{background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.12);}
+  .tab-btn[data-tab="tab1"].active{color:var(--navy);}
+  .tab-btn[data-tab="tab2"].active{color:var(--teal);}
+  .tab-btn[data-tab="tab3"].active{color:var(--gold);}
+
+  .container{padding:14px; max-width:760px; margin:0 auto;}
+  .panel{display:none;}
+  .panel.active{display:block; animation:fade .15s ease-in;}
+  @keyframes fade{from{opacity:0} to{opacity:1}}
+
+  .card{background:var(--card); border-radius:16px; padding:16px; margin-bottom:12px; box-shadow:0 1px 2px rgba(0,0,0,.04); border:1px solid var(--border);}
+  .info-card{background:var(--navy-soft); border-color:transparent;}
+  .info-card h3{margin:0 0 6px; font-size:15px; color:var(--navy); font-weight:700;}
+  .info-card p, .info-card li{font-size:14px; line-height:1.7; margin:4px 0; color:#3a3a3c;}
+  .info-card ul{margin:6px 0; padding-left:20px;}
+  #tab2 .info-card{background:var(--teal-soft);}
+  #tab2 .info-card h3{color:var(--teal);}
+  #tab3 .info-card{background:var(--gold-soft);}
+  #tab3 .info-card h3{color:var(--gold);}
+
+  details summary{cursor:pointer; font-weight:700; font-size:14px; color:var(--navy);}
+  #tab2 details summary{color:var(--teal);}
+  #tab3 details summary{color:var(--gold);}
+
+  .progress-wrap{margin:6px 0 16px;}
+  .progress-bar{height:6px; background:var(--track); border-radius:3px; overflow:hidden;}
+  .progress-fill{height:100%; background:var(--navy); width:0%; transition:width .25s; border-radius:3px;}
+  #tab2 .progress-fill{background:var(--teal);}
+  #tab3 .progress-fill{background:var(--gold);}
+  .progress-label{font-size:12px; color:var(--muted); margin-top:6px; text-align:right; font-weight:600;}
+
+  .zone-title{font-weight:700; font-size:17px; margin-bottom:10px; color:var(--text);}
+  .round-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(58px,1fr)); gap:6px; margin-bottom:6px;}
+  .round-btn{border:none; background:var(--track); border-radius:10px; padding:11px 4px; font-size:13px; font-weight:600; cursor:pointer; text-align:center; color:var(--text);}
+  .round-btn.ok{background:var(--green); color:#fff;}
+  .round-btn.bad{background:var(--red); color:#fff;}
+  .shift-label{font-size:11px; color:var(--muted); margin:10px 0 6px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;}
+  .note-box{margin-top:10px; padding:12px; background:#fff5f5; border-radius:12px;}
+  .note-box label{font-size:13px; font-weight:700; color:var(--red); display:block; margin-bottom:6px;}
+  .note-box input[type=text]{width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:#fff; font-family:inherit;}
+
+  select{width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); font-size:15px; background:#fff; margin-bottom:12px; color:var(--text); font-family:inherit;}
+
+  .item-card{display:flex; flex-direction:column; gap:12px;}
+  .item-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .item-name{font-size:15px; font-weight:600; flex:1; line-height:1.5;}
+  .why{font-size:13px; color:var(--muted); margin-top:3px;}
+  .status-btns{display:flex; background:var(--track); border-radius:10px; padding:3px; flex-shrink:0;}
+  .status-btn{border:none; background:transparent; border-radius:8px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer; color:var(--muted);}
+  .status-btn.pass.active{background:#fff; color:var(--green); box-shadow:0 1px 2px rgba(0,0,0,.1);}
+  .status-btn.fail.active{background:#fff; color:var(--red); box-shadow:0 1px 2px rgba(0,0,0,.1);}
+  .item-note{display:none;}
+  .item-note.show{display:block;}
+  .item-note textarea{width:100%; min-height:54px; padding:10px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; resize:vertical; background:#fff;}
+  .item-note label{font-size:13px; font-weight:700; color:var(--red); display:block; margin-bottom:6px;}
+
+  .photo-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .photo-slot{flex:1; min-width:120px; border-radius:12px; padding:10px; text-align:center; background:#f5f5f7;}
+  .photo-slot-label{font-size:11px; color:var(--muted); margin-bottom:8px; font-weight:600;}
+  .photo-thumb{max-width:100%; max-height:120px; border-radius:8px; display:block; margin:0 auto 8px; object-fit:cover;}
+  .photo-input-label{display:inline-block; padding:8px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; background:#fff; color:var(--navy); border:1px solid var(--border);}
+  #tab2 .photo-input-label{color:var(--teal);}
+  #tab3 .photo-input-label{color:var(--gold);}
+  .photo-input-label input{display:none;}
+  .photo-remove{margin-top:8px; font-size:12px; padding:6px 12px; border-radius:8px; background:#fff; color:var(--red); border:1px solid var(--border); cursor:pointer; font-weight:600;}
+
+  .actions{display:flex; gap:8px; margin-top:16px;}
+  .btn{flex:1; padding:13px; border-radius:980px; border:none; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;}
+  .btn-primary{background:var(--navy); color:#fff;}
+  #tab2 .btn-primary{background:var(--teal);}
+  #tab3 .btn-primary{background:var(--gold);}
+  .btn-secondary{background:#fff; color:var(--text); border:1px solid var(--border);}
+
+  .zone-note textarea{width:100%; min-height:50px; padding:10px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; background:#fff;}
+  .zone-note label{font-size:13px; font-weight:700; color:var(--muted); display:block; margin-bottom:6px;}
+
+  .legend{display:flex; gap:14px; font-size:12px; color:var(--muted); flex-wrap:wrap; margin-top:8px;}
+  .legend span{display:flex; align-items:center; gap:5px;}
+  .dot{width:11px; height:11px; border-radius:50%; display:inline-block; background:var(--track);}
+  .dot.ok{background:var(--green);}
+  .dot.bad{background:var(--red);}
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1d1d1f; color:#fff;
+    padding:11px 22px; border-radius:980px; font-size:14px; opacity:0; transition:opacity .25s; pointer-events:none; z-index:100;
+    max-width:90%; text-align:center;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ตลาดยิ่งเจริญ — ตรวจตลาดสด</h1>
+  <div class="sub-row">
+    <div class="field">
+      <label>ผู้ตรวจ (ชื่อ รปภ.)</label>
+      <input type="text" id="guardName" placeholder="พิมพ์ชื่อ-นามสกุล">
+    </div>
+    <div class="field">
+      <label>วันที่ตรวจ</label>
+      <input type="date" id="datePicker">
+    </div>
+  </div>
+  <div class="date-display" id="dateLabel"></div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="tab1">1. ตรวจรุกล้ำ</button>
+  <button class="tab-btn" data-tab="tab2">2. ตรวจความสะอาด</button>
+  <button class="tab-btn" data-tab="tab3">3. ตรวจบัตรสมาชิก</button>
+</div>
+
+<div class="container">
+
+  <!-- TAB 1 -->
+  <div class="panel active" id="tab1">
+    <div class="card info-card">
+      <h3>วัตถุประสงค์</h3>
+      <p>เพื่อให้ลูกค้าที่เข้ามาใช้บริการเดินได้อย่างสะดวก (พื้นที่ทางเดินทุกส่วนต้องมีทางเดิน)</p>
+      <details>
+        <summary>วิธีตรวจ &amp; หลักเกณฑ์สีธง/ป้าย</summary>
+        <ul>
+          <li>ถ่ายรูปชื่อร้านค้าที่รุกล้ำ</li>
+          <li>ถ่ายภาพสถานที่/จุดที่รุกล้ำ</li>
+          <li>บันทึกพื้นที่ที่รุกล้ำลงระบบ</li>
+          <li><b>ธงแดง</b>: ห้ามรุกล้ำเด็ดขาด ตั้งแต่เวลา 08:00–18:00 น.</li>
+          <li><b>ธงเหลือง</b>: อนุโลมตามเวลา ไม่เกิน 40 ชม. ช่วงเวลา 24:00–06:00 น.</li>
+          <li><b>ป้ายสีเขียว</b> (มีเวลากำกับ ติดบนป้ายร้านค้า): ใช้ได้ในโซนปลาทะเล–น้ำจืด และโซนไข่ ช่วงเวลา 18:00–24:00 น. อนุญาตให้วางเกิน 40 ชม. ได้ แต่ต้องเว้นทางเดินให้ลูกค้า</li>
+        </ul>
+      </details>
+      <div class="legend">
+        <span><i class="dot"></i> ยังไม่ตรวจ</span>
+        <span><i class="dot ok"></i> ตรวจแล้ว ไม่พบรุกล้ำ</span>
+        <span><i class="dot bad"></i> พบการรุกล้ำ</span>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="prog1"></div></div>
+      <div class="progress-label" id="progLabel1">0/0 รอบ</div>
+    </div>
+
+    <div id="zonesContainer1"></div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="sendToGoogleSheet()">ส่งเข้า Google Sheet</button>
+      <button class="btn btn-secondary" onclick="resetTab('tab1')">ล้างข้อมูลแท็บนี้</button>
+    </div>
+  </div>
+
+  <!-- TAB 2 -->
+  <div class="panel" id="tab2">
+    <div class="card info-card">
+      <h3>วัตถุประสงค์</h3>
+      <p>ตรวจสอบความสะอาดของแผงค้า อุปกรณ์ และพื้นที่ส่วนกลาง — ถ่ายภาพ "ก่อนทำความสะอาด" และ "หลังทำความสะอาดแล้ว" ประกอบทุกรายการ</p>
+    </div>
+
+    <select id="zoneSelect2"></select>
+
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="prog2"></div></div>
+      <div class="progress-label" id="progLabel2">0/0 รายการ</div>
+    </div>
+
+    <div id="itemsContainer2"></div>
+
+    <div class="card zone-note">
+      <label>หมายเหตุรวมของโซนนี้</label>
+      <textarea id="zoneNote2" placeholder="บันทึกเพิ่มเติม..."></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="sendToGoogleSheet()">ส่งเข้า Google Sheet</button>
+      <button class="btn btn-secondary" onclick="resetTab('tab2')">ล้างข้อมูลแท็บนี้</button>
+    </div>
+  </div>
+
+  <!-- TAB 3 -->
+  <div class="panel" id="tab3">
+    <div class="card info-card">
+      <h3>วัตถุประสงค์</h3>
+      <p>ตรวจสอบบัตรสมาชิกยิ่งเจริญของผู้ค้า/ผู้ช่วยค้าในแต่ละโซน เพื่อให้ข้อมูลสมาชิกถูกต้องและเป็นปัจจุบัน</p>
+    </div>
+
+    <select id="zoneSelect3"></select>
+
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="prog3"></div></div>
+      <div class="progress-label" id="progLabel3">0/0 รายการ</div>
+    </div>
+
+    <div id="itemsContainer3"></div>
+
+    <div class="card zone-note">
+      <label>หมายเหตุรวมของโซนนี้</label>
+      <textarea id="zoneNote3" placeholder="บันทึกเพิ่มเติม..."></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="sendToGoogleSheet()">ส่งเข้า Google Sheet</button>
+      <button class="btn btn-secondary" onclick="resetTab('tab3')">ล้างข้อมูลแท็บนี้</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ========================= CONFIG ========================= */
+// ลิงก์ Google Apps Script Web App (ดู AppsScript_doPost.gs)
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbx3N1gxp9Gf94x-dXNbqgzUpirfQuy44YO6-rgcnS_OTVdAzp5Nw10cigkCcoy_uNlu/exec";
+
+/* ========================= DATA ========================= */
+const ZONES1 = [
+  "อาคารยาว ปลาน้ำจืด-ปลาทะเล",
+  "อาคารยาว ท้ายเพชร",
+  "อาคารกลาง",
+  "พลาซ่า + ฟู้ดพลาซ่า + อาคารจงรักษ์"
+];
+const ROUNDS = ["08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00","00:00","03:00","06:00"];
+const ROUND_SHIFT_BREAK = 6;
+
+const ZONES2_FULL = ["โซนอาคารกลาง","โซนอาคารผัก2","โซนอาคาร60ปี","โซนอาคาร800ตรม.","โซนอาคารยาว","take home","โซนฟู้ดพลาซ่า","โซนครัวยิ่งเจริญ"];
+const ZONES2_GREASE = ["โซนฟู้ดพลาซ่า","โซนครัวยิ่งเจริญ","take home","โซนอาคารกลาง"];
+
+const ITEMS2 = [
+  {name:"ตรวจความสะอาดแผง", scope:"full"},
+  {name:"ตรวจป้ายชื่อร้านสะอาดไหม (ไม่สกปรก)", scope:"full"},
+  {name:"ตรวจความสะอาดพัดลม (ไม่มีคราบสกปรก/หยากไย่)", scope:"full"},
+  {name:"ตรวจความสะอาดโคมไฟ/หลอดไฟ (ไม่สกปรก ไม่มีหยากไย่)", scope:"full"},
+  {name:"ตรวจความสะอาดร่องน้ำ (ไม่มีเศษอาหาร/ขยะ/คราบ)", scope:"full"},
+  {name:"ตรวจความสะอาดใต้แผง (ไม่สกปรก ไม่มียุง)", scope:"full"},
+  {name:"ตรวจถังดักไขมัน (สะอาด ไม่มีคราบไขมัน)", scope:"grease"},
+  {name:"ตรวจเครื่องดูดควัน (สะอาด ไม่มีคราบสกปรก)", scope:"grease"},
+  {name:"ตรวจป้ายราคาชัดเจน", scope:"full"}
+];
+
+const ZONES3 = ["โซนอาคารกลาง","โซนอาคารผัก2","โซนอาคาร60ปี","โซนอาคาร800ตรม.","โซนอาคารยาว","take home","โซนฟู้ดพลาซ่า","โซนครัวยิ่งเจริญ","โซนอาคารจงรักษ์","โซนพลาซ่า","โซนพลาซ่า2","โซนชุมเรือนไทย(ลอตเตอรี่)"];
+
+const ITEMS3 = [
+  {name:"ตรวจชื่อร้านตรงกับชื่อในบัตรหรือไม่", why:"เพื่อทราบจำนวนผู้ค้าและผู้ช่วยค้าว่ามีกี่คนในร้าน"},
+  {name:"ตรวจว่ามีบัตรใหม่หรือไม่", why:"เพื่อทราบสัญชาติของผู้ค้าและผู้ช่วยค้า"},
+  {name:"ตรวจรูปถ่ายในบัตรตรงกับผู้ถือบัตรหรือไม่", why:"เพื่ออัปเดตข้อมูลสมาชิกในร้านให้เป็นปัจจุบัน"}
+];
+
+/* ========================= STATE ========================= */
+const STORAGE_KEY = "marketInspectionState";
+const GUARD_KEY = "marketInspectionGuardName";
+let state = loadState();
+
+function todayStr(){
+  const d = new Date();
+  const off = d.getTimezoneOffset();
+  return new Date(d.getTime() - off*60000).toISOString().slice(0,10);
+}
+
+function lastGuardName(){
+  try{ return localStorage.getItem(GUARD_KEY) || ""; }catch(e){ return ""; }
+}
+
+function emptyState(date){
+  return {
+    date: date,
+    guardName: lastGuardName(),
+    tab1: ZONES1.map(()=> ROUNDS.map(()=>({status:0, note:"", photos:{shop:null, spot:null}}))),
+    tab2: {},
+    tab3: {}
+  };
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(parsed && parsed.date) return migrateState(parsed);
+    }
+  }catch(e){}
+  return emptyState(todayStr());
+}
+
+function migrateState(s){
+  if(s.guardName === undefined) s.guardName = lastGuardName();
+  s.tab1.forEach(zoneArr=> zoneArr.forEach(c=>{
+    if(!c.photos) c.photos = {shop:null, spot:null};
+    delete c.photo;
+  }));
+  Object.values(s.tab2 || {}).forEach(data=>{
+    data.items.forEach(e=>{ if(!e.photos) e.photos = {before:null, after:null}; });
+  });
+  Object.values(s.tab3 || {}).forEach(data=>{
+    data.items.forEach(e=>{ if(e.photo === undefined) e.photo = null; });
+  });
+  return s;
+}
+
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){
+    showToast("บันทึกไม่สำเร็จ: พื้นที่จัดเก็บเต็ม ลองลบรูปบางรูปออก");
+  }
+}
+
+function ensureTab2Zone(zone){
+  if(!state.tab2[zone]){
+    const items = getItems2ForZone(zone);
+    state.tab2[zone] = {items: items.map(()=>({status:0, note:"", photos:{before:null, after:null}})), zoneNote:""};
+  }
+  return state.tab2[zone];
+}
+function ensureTab3Zone(zone){
+  if(!state.tab3[zone]){
+    state.tab3[zone] = {items: ITEMS3.map(()=>({status:0, note:"", photo:null})), zoneNote:""};
+  }
+  return state.tab3[zone];
+}
+
+function getItems2ForZone(zone){
+  return ITEMS2.filter(it => it.scope === "full" || ZONES2_GREASE.includes(zone));
+}
+
+/* ========================= INIT ========================= */
+document.getElementById("datePicker").value = state.date;
+document.getElementById("guardName").value = state.guardName || "";
+updateDateLabel();
+
+document.getElementById("datePicker").addEventListener("change", (e)=>{
+  const newDate = e.target.value || todayStr();
+  if(newDate !== state.date){
+    if(confirm("เปลี่ยนวันที่จะรีเซ็ตข้อมูลการตรวจทั้งหมดของวันนี้ เริ่มบันทึกใหม่สำหรับวันที่เลือก ใช่หรือไม่?")){
+      state = emptyState(newDate);
+      saveState();
+      document.getElementById("guardName").value = state.guardName || "";
+      renderAll();
+    } else {
+      e.target.value = state.date;
+    }
+  }
+  updateDateLabel();
+});
+
+document.getElementById("guardName").addEventListener("input", (e)=>{
+  state.guardName = e.target.value;
+  try{ localStorage.setItem(GUARD_KEY, e.target.value); }catch(err){}
+  saveState();
+});
+
+function updateDateLabel(){
+  const d = new Date(state.date + "T00:00:00");
+  const opts = {weekday:'long', year:'numeric', month:'long', day:'numeric'};
+  document.getElementById("dateLabel").textContent = "วันที่ตรวจ: " + d.toLocaleDateString('th-TH', opts);
+}
+
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab).classList.add("active");
+  });
+});
+
+/* ========================= GOOGLE SHEET ========================= */
+function buildSheetRows(){
+  const rows = [];
+  const ts = new Date().toISOString();
+  const guard = state.guardName || "";
+
+  ZONES1.forEach((zone, zi)=>{
+    ROUNDS.forEach((round, ri)=>{
+      const c = state.tab1[zi][ri];
+      if(c.status !== 0){
+        rows.push({
+          date: state.date, guardName: guard, section:"1. ตรวจรุกล้ำ", location: zone, item:"รอบ " + round,
+          status: c.status===1 ? "ตรวจแล้ว ไม่พบรุกล้ำ" : "พบการรุกล้ำ",
+          note: c.note || "",
+          photos: [
+            {name:"shop_"+zone+"_"+round+".jpg", base64:(c.photos&&c.photos.shop)||null},
+            {name:"spot_"+zone+"_"+round+".jpg", base64:(c.photos&&c.photos.spot)||null}
+          ],
+          timestamp: ts
+        });
+      }
+    });
+  });
+
+  Object.keys(state.tab2).forEach(zone=>{
+    const data = state.tab2[zone];
+    const items = getItems2ForZone(zone);
+    items.forEach((item, idx)=>{
+      const e = data.items[idx];
+      if(e.status !== 0){
+        rows.push({
+          date: state.date, guardName: guard, section:"2. ตรวจความสะอาด", location: zone, item:item.name,
+          status: e.status===1 ? "ผ่าน" : "ไม่ผ่าน",
+          note: e.note || "",
+          photos: [
+            {name:"before_"+zone+"_"+idx+".jpg", base64:(e.photos&&e.photos.before)||null},
+            {name:"after_"+zone+"_"+idx+".jpg", base64:(e.photos&&e.photos.after)||null}
+          ],
+          timestamp: ts
+        });
+      }
+    });
+    if(data.zoneNote && data.zoneNote.trim()){
+      rows.push({date: state.date, guardName: guard, section:"2. ตรวจความสะอาด", location: zone, item:"หมายเหตุรวมโซน", status:"", note: data.zoneNote.trim(), photos:[], timestamp: ts});
+    }
+  });
+
+  Object.keys(state.tab3).forEach(zone=>{
+    const data = state.tab3[zone];
+    ITEMS3.forEach((item, idx)=>{
+      const e = data.items[idx];
+      if(e.status !== 0){
+        rows.push({
+          date: state.date, guardName: guard, section:"3. ตรวจบัตรสมาชิก", location: zone, item:item.name,
+          status: e.status===1 ? "ปกติ" : "ผิดปกติ",
+          note: e.note || "",
+          photos: [{name:"card_"+zone+"_"+idx+".jpg", base64:e.photo||null}],
+          timestamp: ts
+        });
+      }
+    });
+    if(data.zoneNote && data.zoneNote.trim()){
+      rows.push({date: state.date, guardName: guard, section:"3. ตรวจบัตรสมาชิก", location: zone, item:"หมายเหตุรวมโซน", status:"", note: data.zoneNote.trim(), photos:[], timestamp: ts});
+    }
+  });
+
+  return rows;
+}
+
+async function sendToGoogleSheet(){
+  if(!state.guardName || !state.guardName.trim()){
+    showToast("กรุณากรอกชื่อผู้ตรวจ (รปภ.) ก่อนส่งข้อมูล");
+    document.getElementById("guardName").focus();
+    return;
+  }
+  const rows = buildSheetRows();
+  if(rows.length === 0){
+    showToast("ยังไม่มีข้อมูลที่ตรวจแล้วสำหรับวันนี้");
+    return;
+  }
+  showToast("กำลังส่งข้อมูล " + rows.length + " รายการ...");
+  try{
+    await fetch(SHEET_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {"Content-Type": "text/plain;charset=utf-8"},
+      body: JSON.stringify({rows: rows})
+    });
+    showToast("ส่งข้อมูล " + rows.length + " รายการแล้ว — ตรวจสอบใน Google Sheet");
+  }catch(err){
+    showToast("ส่งไม่สำเร็จ: ตรวจสอบอินเทอร์เน็ต");
+  }
+}
+
+/* ========================= PHOTO HELPERS ========================= */
+function compressImage(file, callback){
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const maxW = 800;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      callback(canvas.toDataURL("image/jpeg", 0.65));
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function createPhotoSlot(labelText, dataUrl, onChange){
+  const wrap = document.createElement("div");
+  wrap.className = "photo-slot";
+  const label = document.createElement("div");
+  label.className = "photo-slot-label";
+  label.textContent = labelText;
+  wrap.appendChild(label);
+
+  if(dataUrl){
+    const img = document.createElement("img");
+    img.className = "photo-thumb";
+    img.src = dataUrl;
+    wrap.appendChild(img);
+    const rm = document.createElement("button");
+    rm.className = "photo-remove";
+    rm.textContent = "ลบรูป";
+    rm.onclick = ()=> onChange(null);
+    wrap.appendChild(rm);
+  } else {
+    const fileLabel = document.createElement("label");
+    fileLabel.className = "photo-input-label";
+    fileLabel.textContent = "ถ่ายภาพ";
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.setAttribute("capture", "environment");
+    input.onchange = (e)=>{
+      const f = e.target.files[0];
+      if(f) compressImage(f, (dataUrl)=> onChange(dataUrl));
+    };
+    fileLabel.appendChild(input);
+    wrap.appendChild(fileLabel);
+  }
+  return wrap;
+}
+
+/* ========================= RENDER TAB 1 ========================= */
+function renderTab1(){
+  const container = document.getElementById("zonesContainer1");
+  container.innerHTML = "";
+  ZONES1.forEach((zone, zi)=>{
+    const card = document.createElement("div");
+    card.className = "card";
+    const title = document.createElement("div");
+    title.className = "zone-title";
+    title.textContent = zone;
+    card.appendChild(title);
+
+    const shiftLabel1 = document.createElement("div");
+    shiftLabel1.className = "shift-label";
+    shiftLabel1.textContent = "ผลัดเช้า";
+    card.appendChild(shiftLabel1);
+
+    const gridAM = document.createElement("div");
+    gridAM.className = "round-grid";
+    const gridPM = document.createElement("div");
+    gridPM.className = "round-grid";
+
+    ROUNDS.forEach((round, ri)=>{
+      const cell = state.tab1[zi][ri];
+      const btn = document.createElement("div");
+      btn.className = "round-btn" + (cell.status===1?" ok":"") + (cell.status===2?" bad":"");
+      btn.textContent = round;
+      btn.onclick = ()=>{
+        cell.status = (cell.status + 1) % 3;
+        if(cell.status !== 2){ cell.note=""; cell.photos = {shop:null, spot:null}; }
+        saveState();
+        renderTab1();
+      };
+      if(ri < ROUND_SHIFT_BREAK) gridAM.appendChild(btn);
+      else gridPM.appendChild(btn);
+    });
+    card.appendChild(gridAM);
+
+    const shiftLabel2 = document.createElement("div");
+    shiftLabel2.className = "shift-label";
+    shiftLabel2.textContent = "ผลัดดึก";
+    card.appendChild(shiftLabel2);
+    card.appendChild(gridPM);
+
+    ROUNDS.forEach((round, ri)=>{
+      const cell = state.tab1[zi][ri];
+      if(cell.status === 2){
+        const box = document.createElement("div");
+        box.className = "note-box";
+        const label = document.createElement("label");
+        label.textContent = "พบรุกล้ำ — รอบ " + round + " : ชื่อร้านค้าที่รุกล้ำ";
+        box.appendChild(label);
+        const input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = "ระบุชื่อร้านค้า / จุดที่รุกล้ำ";
+        input.value = cell.note;
+        input.oninput = (e)=>{ cell.note = e.target.value; saveState(); };
+        box.appendChild(input);
+
+        const photoRow = document.createElement("div");
+        photoRow.className = "photo-row";
+        photoRow.style.marginTop = "8px";
+        photoRow.appendChild(createPhotoSlot("ภาพชื่อร้านค้า", cell.photos.shop, (val)=>{ cell.photos.shop = val; saveState(); renderTab1(); }));
+        photoRow.appendChild(createPhotoSlot("ภาพจุดที่รุกล้ำ", cell.photos.spot, (val)=>{ cell.photos.spot = val; saveState(); renderTab1(); }));
+        box.appendChild(photoRow);
+
+        card.appendChild(box);
+      }
+    });
+
+    container.appendChild(card);
+  });
+  updateProgress1();
+}
+
+function updateProgress1(){
+  let total=0, done=0;
+  state.tab1.forEach(zoneArr=> zoneArr.forEach(c=>{ total++; if(c.status!==0) done++; }));
+  document.getElementById("prog1").style.width = (total? (done/total*100):0) + "%";
+  document.getElementById("progLabel1").textContent = done + "/" + total + " รอบ";
+}
+
+/* ========================= RENDER TAB 2 ========================= */
+function populateZoneSelect2(){
+  const sel = document.getElementById("zoneSelect2");
+  sel.innerHTML = "";
+  ZONES2_FULL.forEach(z=>{
+    const opt = document.createElement("option");
+    opt.value = z; opt.textContent = z;
+    sel.appendChild(opt);
+  });
+  sel.value = state._currentZone2 || ZONES2_FULL[0];
+  sel.onchange = ()=>{ state._currentZone2 = sel.value; renderTab2Items(); };
+}
+
+function renderTab2Items(){
+  const sel = document.getElementById("zoneSelect2");
+  const zone = sel.value;
+  const data = ensureTab2Zone(zone);
+  const items = getItems2ForZone(zone);
+  const container = document.getElementById("itemsContainer2");
+  container.innerHTML = "";
+
+  items.forEach((item, idx)=>{
+    const entry = data.items[idx];
+    const card = document.createElement("div");
+    card.className = "card item-card";
+
+    const head = document.createElement("div");
+    head.className = "item-head";
+    const name = document.createElement("div");
+    name.className = "item-name";
+    name.textContent = item.name;
+    head.appendChild(name);
+
+    const btns = document.createElement("div");
+    btns.className = "status-btns";
+    const passBtn = document.createElement("button");
+    passBtn.className = "status-btn pass" + (entry.status===1?" active":"");
+    passBtn.textContent = "ผ่าน";
+    const failBtn = document.createElement("button");
+    failBtn.className = "status-btn fail" + (entry.status===2?" active":"");
+    failBtn.textContent = "ไม่ผ่าน";
+
+    passBtn.onclick = ()=>{ entry.status = entry.status===1?0:1; if(entry.status!==2) entry.note=""; saveState(); renderTab2Items(); };
+    failBtn.onclick = ()=>{ entry.status = entry.status===2?0:2; saveState(); renderTab2Items(); };
+
+    btns.appendChild(passBtn);
+    btns.appendChild(failBtn);
+    head.appendChild(btns);
+    card.appendChild(head);
+
+    const photoRow = document.createElement("div");
+    photoRow.className = "photo-row";
+    photoRow.appendChild(createPhotoSlot("รูปก่อนทำความสะอาด", entry.photos.before, (val)=>{ entry.photos.before = val; saveState(); renderTab2Items(); }));
+    photoRow.appendChild(createPhotoSlot("รูปหลังทำความสะอาดแล้ว", entry.photos.after, (val)=>{ entry.photos.after = val; saveState(); renderTab2Items(); }));
+    card.appendChild(photoRow);
+
+    if(entry.status===2){
+      const noteWrap = document.createElement("div");
+      noteWrap.className = "item-note show";
+      const label = document.createElement("label");
+      label.textContent = "ระบุปัญหาที่พบ / จุดที่ต้องทำความสะอาด";
+      noteWrap.appendChild(label);
+      const ta = document.createElement("textarea");
+      ta.placeholder = "รายละเอียดปัญหา...";
+      ta.value = entry.note;
+      ta.oninput = (e)=>{ entry.note = e.target.value; saveState(); };
+      noteWrap.appendChild(ta);
+      card.appendChild(noteWrap);
+    }
+
+    container.appendChild(card);
+  });
+
+  document.getElementById("zoneNote2").value = data.zoneNote || "";
+  document.getElementById("zoneNote2").oninput = (e)=>{ data.zoneNote = e.target.value; saveState(); };
+
+  updateProgress2(items, data);
+}
+
+function updateProgress2(items, data){
+  const total = items.length;
+  const done = data.items.filter(i=>i.status!==0).length;
+  document.getElementById("prog2").style.width = (total? (done/total*100):0) + "%";
+  document.getElementById("progLabel2").textContent = done + "/" + total + " รายการ";
+}
+
+/* ========================= RENDER TAB 3 ========================= */
+function populateZoneSelect3(){
+  const sel = document.getElementById("zoneSelect3");
+  sel.innerHTML = "";
+  ZONES3.forEach(z=>{
+    const opt = document.createElement("option");
+    opt.value = z; opt.textContent = z;
+    sel.appendChild(opt);
+  });
+  sel.value = state._currentZone3 || ZONES3[0];
+  sel.onchange = ()=>{ state._currentZone3 = sel.value; renderTab3Items(); };
+}
+
+function renderTab3Items(){
+  const sel = document.getElementById("zoneSelect3");
+  const zone = sel.value;
+  const data = ensureTab3Zone(zone);
+  const container = document.getElementById("itemsContainer3");
+  container.innerHTML = "";
+
+  ITEMS3.forEach((item, idx)=>{
+    const entry = data.items[idx];
+    const card = document.createElement("div");
+    card.className = "card item-card";
+
+    const head = document.createElement("div");
+    head.className = "item-head";
+    const nameWrap = document.createElement("div");
+    nameWrap.style.flex = "1";
+    const name = document.createElement("div");
+    name.className = "item-name";
+    name.textContent = item.name;
+    nameWrap.appendChild(name);
+    const why = document.createElement("div");
+    why.className = "why";
+    why.textContent = "ตรวจทำไม: " + item.why;
+    nameWrap.appendChild(why);
+    head.appendChild(nameWrap);
+
+    const btns = document.createElement("div");
+    btns.className = "status-btns";
+    const passBtn = document.createElement("button");
+    passBtn.className = "status-btn pass" + (entry.status===1?" active":"");
+    passBtn.textContent = "ปกติ";
+    const failBtn = document.createElement("button");
+    failBtn.className = "status-btn fail" + (entry.status===2?" active":"");
+    failBtn.textContent = "ผิดปกติ";
+
+    passBtn.onclick = ()=>{ entry.status = entry.status===1?0:1; if(entry.status!==2) entry.note=""; saveState(); renderTab3Items(); };
+    failBtn.onclick = ()=>{ entry.status = entry.status===2?0:2; saveState(); renderTab3Items(); };
+
+    btns.appendChild(passBtn);
+    btns.appendChild(failBtn);
+    head.appendChild(btns);
+    card.appendChild(head);
+
+    const photoRow = document.createElement("div");
+    photoRow.className = "photo-row";
+    photoRow.appendChild(createPhotoSlot("ภาพประกอบ (บัตร/ร้าน)", entry.photo, (val)=>{ entry.photo = val; saveState(); renderTab3Items(); }));
+    card.appendChild(photoRow);
+
+    if(entry.status===2){
+      const noteWrap = document.createElement("div");
+      noteWrap.className = "item-note show";
+      const label = document.createElement("label");
+      label.textContent = "ระบุรายละเอียด";
+      noteWrap.appendChild(label);
+      const ta = document.createElement("textarea");
+      ta.placeholder = "รายละเอียด...";
+      ta.value = entry.note;
+      ta.oninput = (e)=>{ entry.note = e.target.value; saveState(); };
+      noteWrap.appendChild(ta);
+      card.appendChild(noteWrap);
+    }
+
+    container.appendChild(card);
+  });
+
+  document.getElementById("zoneNote3").value = data.zoneNote || "";
+  document.getElementById("zoneNote3").oninput = (e)=>{ data.zoneNote = e.target.value; saveState(); };
+
+  updateProgress3(data);
+}
+
+function updateProgress3(data){
+  const total = ITEMS3.length;
+  const done = data.items.filter(i=>i.status!==0).length;
+  document.getElementById("prog3").style.width = (total? (done/total*100):0) + "%";
+  document.getElementById("progLabel3").textContent = done + "/" + total + " รายการ";
+}
+
+/* ========================= RESET ========================= */
+function resetTab(tab){
+  if(!confirm("ล้างข้อมูลของแท็บนี้ทั้งหมด สำหรับวันที่ " + state.date + " ใช่หรือไม่?")) return;
+  if(tab==="tab1") state.tab1 = ZONES1.map(()=> ROUNDS.map(()=>({status:0, note:"", photos:{shop:null, spot:null}})));
+  if(tab==="tab2") state.tab2 = {};
+  if(tab==="tab3") state.tab3 = {};
+  saveState();
+  renderAll();
+  showToast("ล้างข้อมูลเรียบร้อย");
+}
+
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2400);
+}
+
+/* ========================= RENDER ALL ========================= */
+function renderAll(){
+  document.getElementById("datePicker").value = state.date;
+  document.getElementById("guardName").value = state.guardName || "";
+  updateDateLabel();
+  renderTab1();
+  populateZoneSelect2();
+  renderTab2Items();
+  populateZoneSelect3();
+  renderTab3Items();
+}
+
+renderAll();
+</script>
+</body>
+</html>
