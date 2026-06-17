@@ -371,7 +371,7 @@ function migrateState(s){
     delete c.photo;
   }));
   Object.values(s.tab2 || {}).forEach(data=>{
-    data.items.forEach(e|>{ if(!e.photos) e.photos = {before:null, after:null}; });
+    data.items.forEach(e=>{ if(!e.photos) e.photos = {before:null, after:null}; });
   });
   Object.values(s.tab3 || {}).forEach(data=>{
     data.items.forEach(e=>{ if(e.photo === undefined) e.photo = null; });
