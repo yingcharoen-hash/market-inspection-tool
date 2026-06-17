@@ -159,7 +159,7 @@
       <h3>วัตถุประสงค์</h3>
       <p>เพื่อให้ลูกค้าที่เข้ามาใช้บริการเดินได้อย่างสะดวก (พื้นที่ทางเดินทุกส่วนต้องมีทางเดิน)</p>
       <details>
-        <summary>วิธีตรวจ &amp; หลักเกณฑ์สีธง/ป้าย</summary>
+        <summary>วิธีตรวจ & หลักเกณฑ์สีธง/ป้าย</summary>
         <ul>
           <li>ถ่ายรูปชื่อร้านค้าที่รุกล้ำ</li>
           <li>ถ่ายภาพสถานที่/จุดที่รุกล้ำ</li>
@@ -207,7 +207,7 @@
 
     <div class="card zone-note">
       <label>หมายเหตุรวมของโซนนี้</label>
-      <textarea id="zoneNote2" placeholder="บันทึกเพิ่มเติม..."></textarea>
+      <textarea id="zoneNote2" placeholder="บันทึกสิ่งที่พบเพิ่มเติม..."></textarea>
     </div>
 
     <div class="actions">
@@ -234,7 +234,7 @@
 
     <div class="card zone-note">
       <label>หมายเหตุรวมของโซนนี้</label>
-      <textarea id="zoneNote3" placeholder="บันทึกเพิ่มเติม..."></textarea>
+      <textarea id="zoneNote3" placeholder="บันทึกสิ่งที่พบเพิ่มเติม..."></textarea>
     </div>
 
     <div class="actions">
@@ -853,9 +853,23 @@ function resetTab(tab){
   renderAll();
   showToast("ล้างข้อมูลเรียบร้อย");
 }
-
 function showToast(msg){
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.classList.add("show");
-  setTimeout(()
+  setTimeout(()=>{ t.classList.remove("show"); }, 3000);
+}
+
+function renderAll(){
+  setGuardSelectValue();
+  updateDateLabel();
+  renderTab1();
+  populateZoneSelect2();
+  renderTab2Items();
+  populateZoneSelect3();
+  renderTab3Items();
+}
+renderAll();
+</script>
+</body>
+</html>
