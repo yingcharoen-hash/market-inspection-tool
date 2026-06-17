@@ -22,8 +22,11 @@
  * รายละเอียดเพิ่มเติม: ดูไฟล์ google_sheet_setup.md
  */
 
+// ใส่ ID ของ Google Sheet ที่นี่ (ดูจาก URL ของ Sheet: .../spreadsheets/d/【ID】/edit)
+const SPREADSHEET_ID = "YOUR_SPREADSHEET_ID_HERE";
+
 function doPost(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getActiveSheet();
   const data = JSON.parse(e.postData.contents);
   const folder = getOrCreateFolder("ภาพตรวจตลาดสด");
 
@@ -51,7 +54,7 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName("setting");
   let names = [];
   if (sheet) {
