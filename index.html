@@ -517,10 +517,9 @@ async function sendToGoogleSheet(){
       body: JSON.stringify({rows: rows})
     });
     showToast("ส่งข้อมูล " + rows.length + " รายการแล้ว — ตรวจสอบใน Google Sheet");
-    const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
-    if(activeTab==='tab1') state.tab1 = ZONES1.map(()=> ROUNDS.map(()=>({status:0, note:"", photos:{shop:null, spot:null}})));
-    if(activeTab==='tab2') state.tab2 = {};
-    if(activeTab==='tab3') state.tab3 = {};
+    state.tab1 = ZONES1.map(()=> ROUNDS.map(()=>({status:0, note:"", photos:{shop:null, spot:null}})));
+    state.tab2 = {};
+    state.tab3 = {};
     saveState();
     renderAll();
   }catch(err){
