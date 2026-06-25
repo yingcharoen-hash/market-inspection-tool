@@ -277,6 +277,8 @@ const ITEMS2 = [
   {name:"ตรวจป้ายราคาชัดเจน", scope:"full"}
 ];
 
+const ENCROACH_TYPES = ["วางสินค้าเพื่อขาย","รับฝากสินค้าจากลูกค้า","โหลดสินค้าขึ้นแผงค้า","วางวัสดุอุปกรณ์รุกล้ำ"];
+
 const ZONES3 = ["โซนอาคารกลาง","โซนอาคารผัก2","โซนอาคาร60ปี","โซนอาคาร800ตรม.","โซนอาคารยาว","take home","โซนฟู้ดพลาซ่า","โซนครัวยิ่งเจริญ","โซนอาคารจงรักษ์","โซนพลาซ่า","โซนพลาซ่า2","โซนชุมเรือนไทย(ลอตเตอรี่)"];
 
 const ITEMS3 = [
@@ -344,7 +346,7 @@ function emptyState(date){
   return {
     date: date,
     guardName: lastGuardName(),
-    tab1: ZONES1.map(()=> ROUNDS.map(()=>({status:0, note:"", photos:{shop:null, spot:null}}))),
+    tab1: ZONES1.map(()=> ROUNDS.map(()=>({status:0, encType:"", note:"", photos:{shop:null, spot:null}}))),
     tab2: {},
     tab3: {}
   };
@@ -368,6 +370,7 @@ function migrateState(s){
   if(s.guardName === undefined) s.guardName = lastGuardName();
   s.tab1.forEach(zoneArr=> zoneArr.forEach(c=>{
     if(!c.photos) c.photos = {shop:null, spot:null};
+    if(c.encType === undefined) c.encType = "";
     delete c.photo;
   }));
   Object.values(s.tab2 || {}).forEach(data=>{
@@ -441,6 +444,7 @@ function buildSheetRows(){
         rows.push({
           date: state.date, guardName: guard, section:"1. ตรวจรุกล้ำ", location: zone, item:"รอบ " + round,
           status: c.status===1 ? "ตรวจแล้ว ไม่พบรุกล้ำ" : "พบการรุกล้ำ",
+          encType: c.encType || "",
           note: c.note || "",
           photos: [
             {name:"shop_"+zone+"_"+round+".jpg", base64:(c.photos&&c.photos.shop)||null},
@@ -612,7 +616,7 @@ function renderTab1(){
       btn.textContent = round;
       btn.onclick = ()=>{
         cell.status = (cell.status + 1) % 3;
-        if(cell.status !== 2){ cell.note=""; cell.photos = {shop:null, spot:null}; }
+        if(cell.status !== 2){ cell.encType=""; cell.note=""; cell.photos = {shop:null, spot:null}; }
         saveState();
         renderTab1();
       };
@@ -633,8 +637,31 @@ function renderTab1(){
         const box = document.createElement("div");
         box.className = "note-box";
         const label = document.createElement("label");
-        label.textContent = "พบรุกล้ำ — รอบ " + round + " : ชื่อร้านค้าที่รุกล้ำ";
+        label.textContent = "พบรุกล้ำ — รอบ " + round;
         box.appendChild(label);
+
+        const typeLabel = document.createElement("label");
+        typeLabel.textContent = "ประเภทการรุกล้ำ";
+        typeLabel.style.cssText = "font-size:13px;font-weight:700;color:var(--red);display:block;margin-bottom:4px;";
+        box.appendChild(typeLabel);
+        const typeSelect = document.createElement("select");
+        typeSelect.style.cssText = "margin-bottom:10px;background:#fff;color:var(--text);border:1px solid var(--border);";
+        const emptyOpt = document.createElement("option");
+        emptyOpt.value = ""; emptyOpt.textContent = "— เลือกประเภท —";
+        typeSelect.appendChild(emptyOpt);
+        ENCROACH_TYPES.forEach(t=>{
+          const opt = document.createElement("option");
+          opt.value = t; opt.textContent = t;
+          typeSelect.appendChild(opt);
+        });
+        typeSelect.value = cell.encType || "";
+        typeSelect.onchange = (e)=>{ cell.encType = e.target.value; saveState(); };
+        box.appendChild(typeSelect);
+
+        const shopLabel = document.createElement("label");
+        shopLabel.textContent = "ชื่อร้านค้าที่รุกล้ำ";
+        shopLabel.style.cssText = "font-size:13px;font-weight:700;color:var(--red);display:block;margin-bottom:4px;";
+        box.appendChild(shopLabel);
         const input = document.createElement("input");
         input.type = "text";
         input.placeholder = "ระบุชื่อร้านค้า / จุดที่รุกล้ำ";
