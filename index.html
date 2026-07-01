@@ -506,13 +506,17 @@ function buildSheetRows(){
 
 async function sendToGoogleSheet(){
   if(!state.guardName || !state.guardName.trim()){
-    showToast("กรุณากรอกชื่อผู้ตรวจ (รปภ.) ก่อนส่งข้อมูล");
+    showToast("กรุณาเลือกชื่อผู้ตรวจก่อนส่งข้อมูล");
     document.getElementById("guardName").focus();
     return;
   }
   const rows = buildSheetRows();
   if(rows.length === 0){
     showToast("ยังไม่มีข้อมูลที่ตรวจแล้วสำหรับวันนี้");
+    return;
+  }
+  if(!navigator.onLine){
+    showToast("ไม่มีสัญญาณ — ข้อมูลเซฟไว้แล้ว กดส่งอีกครั้งเมื่อมีอินเตอร์เน็ต");
     return;
   }
   showToast("กำลังส่งข้อมูล " + rows.length + " รายการ...");
@@ -524,13 +528,13 @@ async function sendToGoogleSheet(){
       body: JSON.stringify({rows: rows})
     });
     showToast("ส่งข้อมูล " + rows.length + " รายการแล้ว — ตรวจสอบใน Google Sheet");
-    state.tab1 = ZONES1.map(()=> ROUNDS.map(()=>({status:0, note:"", photos:{shop:null, spot:null}})));
+    state.tab1 = ZONES1.map(()=> ROUNDS.map(()=>({status:0, encType:"", note:"", photos:{shop:null, spot:null}})));
     state.tab2 = {};
     state.tab3 = {};
     saveState();
     renderAll();
   }catch(err){
-    showToast("ส่งไม่สำเร็จ: ตรวจสอบอินเทอร์เน็ต");
+    showToast("ส่งไม่ผ่าน — ข้อมูลยังอยู่ครบ ลองกดส่งอีกครั้ง");
   }
 }
 
