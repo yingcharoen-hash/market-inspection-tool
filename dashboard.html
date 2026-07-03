@@ -225,11 +225,14 @@ function itemTime(item) {
 function tsTime(ts) {
   if (!ts) return '—';
   const s = String(ts);
+  // ISO string (มี T และ Z/+) → ใช้ displayTime เพื่อแปลง timezone Bangkok ให้ถูกต้อง
+  if (s.includes('T') && (s.endsWith('Z') || s.includes('+'))) {
+    return displayTime(s) || '—';
+  }
   // format "DD/MM/YYYY HH:MM:SS" จาก toLocaleString en-GB
   const m = s.match(/(\d{2}:\d{2})(?::\d{2})?/);
   if (m) return m[1];
-  // กรณี ISO string (Date object ถูก serialize)
-  return displayTime(s);
+  return '—';
 }
 
 // ── Modal ─────────────────────────────────────
