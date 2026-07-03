@@ -54,6 +54,34 @@ function doPost(e) {
 }
 
 function doGet(e) {
+  const action = (e && e.parameter && e.parameter.action) || '';
+
+  // --- ดึงชื่อร้านค้า (จาก spreadsheet ทะเบียนร้านค้า คอลัมน์ S) ---
+  if (action === 'shops') {
+    try {
+      const SHOP_SS_ID = "1VqB8yiqny-UZNbY12AJZNecYPDff0-qkrv9kJmy-bfQ";
+      const SHOP_GID   = 1336386039;
+      const extSS    = SpreadsheetApp.openById(SHOP_SS_ID);
+      const extSheet = extSS.getSheets().find(s => s.getSheetId() === SHOP_GID);
+      let shops = [];
+      if (extSheet) {
+        const lastRow = extSheet.getLastRow();
+        if (lastRow >= 2) {
+          shops = extSheet.getRange(2, 19, lastRow - 1, 1).getValues()
+            .map(r => String(r[0]).trim())
+            .filter(v => v !== "");
+          shops = [...new Set(shops)].sort((a, b) => a.localeCompare(b, 'th'));
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ shops }))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ shops: [], error: err.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // --- ค่าเริ่มต้น: รายชื่อผู้ตรวจ (จาก setting sheet) ---
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName("setting");
   let names = [];
@@ -65,7 +93,7 @@ function doGet(e) {
         .filter(v => v !== "");
     }
   }
-  return ContentService.createTextOutput(JSON.stringify({ names: names }))
+  return ContentService.createTextOutput(JSON.stringify({ names }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 

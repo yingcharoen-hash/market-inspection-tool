@@ -216,6 +216,11 @@ function displayTime(isoStr) {
   if (isNaN(d)) return '';
   return d.toLocaleTimeString('th-TH', { timeZone:'Asia/Bangkok', hour:'2-digit', minute:'2-digit' });
 }
+function itemTime(item) {
+  // ดึงเวลารอบจาก "รอบ HH:MM" — ถ้าไม่มีให้คืน '—'
+  const m = (item || '').match(/รอบ\s*(\d{2}:\d{2})/);
+  return m ? m[1] : '—';
+}
 
 // ── Modal ─────────────────────────────────────
 function openModal(title, sub, rows) {
@@ -233,7 +238,7 @@ function openModal(title, sub, rows) {
         const statusTag = `<span class="tag ${bad?'tag-red':'tag-gray'}">${r[C.status]||'—'}</span>`;
         return `<tr>
           <td style="white-space:nowrap">${displayDate(r._d)}</td>
-          <td style="white-space:nowrap;color:var(--sub)">${displayTime(r[C.date])}</td>
+          <td style="white-space:nowrap;color:var(--sub)">${itemTime(r[C.item])}</td>
           <td style="white-space:nowrap">${r[C.guard]||'—'}</td>
           <td style="white-space:nowrap;color:var(--sub)">${(r[C.section]||'').replace(/^\d+\.\s*/,'')}</td>
           <td>${r[C.item]||'—'}</td>
