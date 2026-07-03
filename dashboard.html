@@ -7,7 +7,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --green:       #1B5E3B;
       --green-mid:   #2D7A50;
@@ -22,170 +21,118 @@
       --sub:         #6B6B66;
       --border:      #E0DDD5;
     }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    /* ── Top bar ─────────────────────────────── */
-    .topbar {
-      background: var(--green);
-      color: #fff;
-      padding: 0 20px;
-      height: 52px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
+    /* Top bar */
+    .topbar { background: var(--green); color: #fff; padding: 0 20px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
     .topbar-brand { font-size: 12px; font-weight: 600; opacity: .75; letter-spacing: .5px; }
     .topbar-title { font-size: 16px; font-weight: 700; }
     .topbar-right { display: flex; align-items: center; gap: 12px; }
     .topbar-time  { font-size: 12px; opacity: .7; }
-    .btn-refresh {
-      background: rgba(255,255,255,.15);
-      border: 1px solid rgba(255,255,255,.3);
-      color: #fff;
-      padding: 5px 14px;
-      border-radius: 4px;
-      font-size: 13px;
-      font-family: inherit;
-      cursor: pointer;
-      font-weight: 600;
-    }
+    .btn-refresh { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); color: #fff; padding: 5px 14px; border-radius: 4px; font-size: 13px; font-family: inherit; cursor: pointer; font-weight: 600; }
     .btn-refresh:hover { background: rgba(255,255,255,.25); }
-    .btn-refresh:active { background: rgba(255,255,255,.1); }
 
-    /* ── Filter bar ──────────────────────────── */
-    .filterbar {
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      padding: 10px 20px;
-      display: flex;
-      gap: 20px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+    /* Filter bar */
+    .filterbar { background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
     .fi { display: flex; align-items: center; gap: 8px; }
-    .fi label {
-      font-size: 11px;
-      color: var(--sub);
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-      white-space: nowrap;
-    }
-    .fi select {
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 5px 10px;
-      font-size: 13px;
-      font-family: inherit;
-      color: var(--text);
-      background: var(--bg);
-      cursor: pointer;
-    }
+    .fi label { font-size: 11px; color: var(--sub); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+    .fi select { border: 1px solid var(--border); border-radius: 4px; padding: 5px 10px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--bg); cursor: pointer; }
     .fi select:focus { outline: 2px solid var(--green); border-color: transparent; }
 
-    /* ── Layout ──────────────────────────────── */
+    /* Layout */
     .main { padding: 16px 20px; max-width: 1100px; margin: 0 auto; }
 
-    /* ── KPI ─────────────────────────────────── */
-    .kpi-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 14px;
-    }
+    /* KPI */
+    .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
     @media (max-width: 700px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
-
-    .kpi {
-      background: var(--card);
-      border-radius: 6px;
-      padding: 14px 16px;
-      border-left: 3px solid var(--border);
-      box-shadow: 0 1px 3px rgba(0,0,0,.07);
-    }
-    .kpi.red    { border-left-color: var(--red); }
-    .kpi.green  { border-left-color: var(--green); }
-    .kpi.amber  { border-left-color: var(--amber); }
-    .kpi-label  { font-size: 11px; color: var(--sub); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
-    .kpi-value  { font-size: 34px; font-weight: 700; line-height: 1; }
+    .kpi { background: var(--card); border-radius: 6px; padding: 14px 16px; border-left: 3px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+    .kpi.red   { border-left-color: var(--red); }
+    .kpi.green { border-left-color: var(--green); }
+    .kpi.amber { border-left-color: var(--amber); }
+    .kpi-label { font-size: 11px; color: var(--sub); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+    .kpi-value { font-size: 34px; font-weight: 700; line-height: 1; }
     .kpi.red   .kpi-value { color: var(--red); }
-    .kpi.green .kpi-value { color: var(--green); font-size: 15px; padding-top: 4px; }
+    .kpi.green .kpi-value { color: var(--green); }
     .kpi-sub   { font-size: 11px; color: var(--sub); margin-top: 4px; }
 
-    /* ── Cards ───────────────────────────────── */
-    .card {
-      background: var(--card);
-      border-radius: 6px;
-      margin-bottom: 14px;
-      box-shadow: 0 1px 3px rgba(0,0,0,.07);
-      overflow: hidden;
-    }
-    .card-head {
-      padding: 11px 16px;
-      border-bottom: 1px solid var(--border);
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--green);
-      text-transform: uppercase;
-      letter-spacing: .5px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    /* Section summary */
+    .sec-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+    @media (max-width: 700px) { .sec-row { grid-template-columns: 1fr; } }
+    .sec-card { background: var(--card); border-radius: 6px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.07); border-top: 3px solid var(--border); }
+    .sec-card.enc   { border-top-color: var(--red); }
+    .sec-card.clean { border-top-color: #2196F3; }
+    .sec-card.card2 { border-top-color: var(--amber); }
+    .sec-name  { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 10px; }
+    .sec-nums  { display: flex; gap: 16px; }
+    .sec-num   { flex: 1; }
+    .sec-num-val  { font-size: 24px; font-weight: 700; line-height: 1; }
+    .sec-num-val.problem { color: var(--red); }
+    .sec-num-val.ok      { color: var(--green); }
+    .sec-num-label { font-size: 11px; color: var(--sub); margin-top: 3px; }
+
+    /* Cards */
+    .card { background: var(--card); border-radius: 6px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.07); overflow: hidden; }
+    .card-head { padding: 11px 16px; border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: .5px; display: flex; justify-content: space-between; align-items: center; }
     .card-head-note { font-weight: 400; color: var(--sub); text-transform: none; letter-spacing: 0; font-size: 11px; }
     .chart-wrap { position: relative; height: 200px; padding: 14px; }
 
-    /* ── Two-col charts ──────────────────────── */
     .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
     @media (max-width: 700px) { .chart-row { grid-template-columns: 1fr; } }
 
-    /* ── Tables ──────────────────────────────── */
+    /* Tables */
     .tbl-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    thead th {
-      text-align: left;
-      padding: 8px 14px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--sub);
-      text-transform: uppercase;
-      letter-spacing: .4px;
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
+    thead th { text-align: left; padding: 8px 14px; font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: .4px; background: var(--bg); border-bottom: 1px solid var(--border); white-space: nowrap; }
     tbody td { padding: 9px 14px; border-bottom: 1px solid #F0EDE7; }
     tbody tr:last-child td { border-bottom: none; }
-    tbody tr:hover td { background: var(--green-light); }
+    tbody tr.clickable { cursor: pointer; }
+    tbody tr.clickable:hover td { background: var(--green-light); }
 
-    .tag {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 3px;
-      font-size: 11px;
-      font-weight: 700;
-    }
-    .tag-red    { background: var(--red-light);   color: var(--red); }
-    .tag-amber  { background: var(--amber-light);  color: var(--amber); }
-    .tag-green  { background: var(--green-light);  color: var(--green); }
-    .tag-gray   { background: #F0EDE7; color: var(--sub); }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; }
+    .tag-red   { background: var(--red-light);   color: var(--red); }
+    .tag-amber { background: var(--amber-light);  color: var(--amber); }
+    .tag-green { background: var(--green-light);  color: var(--green); }
+    .tag-blue  { background: #E3F2FD; color: #1565C0; }
+    .tag-gray  { background: #F0EDE7; color: var(--sub); }
 
-    /* ── States ──────────────────────────────── */
+    /* States */
     .msg { text-align: center; padding: 32px 20px; color: var(--sub); font-size: 13px; }
     .msg-error { background: var(--red-light); color: var(--red); padding: 16px; border-radius: 6px; font-size: 13px; text-align: center; line-height: 1.8; margin: 16px; }
+
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--card); border-radius: 8px; width: 100%; max-width: 760px; box-shadow: 0 8px 32px rgba(0,0,0,.2); overflow: hidden; margin: auto; }
+    .modal-head { background: var(--green); color: #fff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { font-size: 14px; font-weight: 700; }
+    .modal-sub   { font-size: 12px; opacity: .75; margin-top: 2px; }
+    .modal-close { background: rgba(255,255,255,.2); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .modal-close:hover { background: rgba(255,255,255,.35); }
+    .modal-body { overflow-x: auto; max-height: 70vh; overflow-y: auto; }
+    .modal-body table { font-size: 12px; }
+    .modal-body thead th { position: sticky; top: 0; }
+    .photo-link { display: inline-block; padding: 2px 8px; background: var(--green-light); color: var(--green); border-radius: 3px; font-size: 11px; font-weight: 700; text-decoration: none; margin-right: 4px; }
+    .photo-link:hover { background: var(--green); color: #fff; }
+    .click-hint { font-size: 11px; color: var(--sub); font-weight: 400; text-transform: none; letter-spacing: 0; }
   </style>
 </head>
 <body>
 
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-sub"  id="modalSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Top bar -->
 <div class="topbar">
   <div>
     <div class="topbar-brand">ตลาดยิ่งเจริญ</div>
@@ -200,9 +147,7 @@
 <div class="filterbar">
   <div class="fi">
     <label>วันที่</label>
-    <select id="dateFilter" onchange="render()">
-      <option value="">ทั้งหมด</option>
-    </select>
+    <select id="dateFilter" onchange="render()"><option value="">ทั้งหมด</option></select>
   </div>
   <div class="fi">
     <label>หมวด</label>
@@ -222,7 +167,6 @@
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3N1gxp9Gf94x-dXNbqgzUpirfQuy44YO6-rgcnS_OTVdAzp5Nw10cigkCcoy_uNlu/exec";
 
-// Thai column names from Sheet1
 const C = {
   date:     'วันที่',
   guard:    'ผู้ตรวจ',
@@ -230,10 +174,22 @@ const C = {
   location: 'สถานที่/โซน',
   item:     'รายการ',
   status:   'ผลตรวจ',
-  note:     'หมายเหตุ'
+  note:     'หมายเหตุ',
+  photo1:   'รูปภาพ1',
+  photo2:   'รูปภาพ2'
 };
-const STATUS_BAD  = 'พบการรุกล้ำ';
-const SECTION_ENC = '1. ตรวจรุกล้ำ';
+
+// "พบปัญหา/ไม่ผ่าน" across all sections
+function isProblem(r) {
+  const s = r[C.status] || '';
+  return s === 'พบการรุกล้ำ' || s === 'ไม่ผ่าน' || (s.startsWith('พบ') && s !== 'พบ');
+}
+
+const SECTIONS = [
+  { key: '1. ตรวจรุกล้ำ',      label: 'ตรวจรุกล้ำ',     cls: 'enc'   },
+  { key: '2. ตรวจความสะอาด',   label: 'ตรวจความสะอาด',  cls: 'clean' },
+  { key: '3. ตรวจบัตรสมาชิก',  label: 'ตรวจบัตรสมาชิก', cls: 'card2' },
+];
 
 let allData = [];
 let charts  = {};
@@ -243,17 +199,57 @@ function toThaiDate(isoStr) {
   if (!isoStr) return '';
   const d = new Date(isoStr);
   if (isNaN(d)) return '';
-  return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' }); // YYYY-MM-DD
+  return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' });
 }
 function todayThai() {
   return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' });
 }
-function displayDate(s) { // "2026-07-03" → "3 ก.ค. 2569"
+function displayDate(s) {
   if (!s) return '';
   const mo = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const [y, m, d] = s.split('-');
-  return `${parseInt(d)} ${mo[parseInt(m)-1]} ${parseInt(y)+543}`;
+  return parseInt(d) + ' ' + mo[parseInt(m)-1] + ' ' + (parseInt(y)+543);
 }
+function displayTime(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  if (isNaN(d)) return '';
+  return d.toLocaleTimeString('th-TH', { timeZone:'Asia/Bangkok', hour:'2-digit', minute:'2-digit' });
+}
+
+// ── Modal ─────────────────────────────────────
+function openModal(title, sub, rows) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalSub').textContent   = sub;
+  if (!rows.length) {
+    document.getElementById('modalBody').innerHTML = '<div class="msg">ไม่มีข้อมูล</div>';
+  } else {
+    document.getElementById('modalBody').innerHTML = `<table>
+      <thead><tr><th>วันที่</th><th>เวลา</th><th>ผู้ตรวจ</th><th>หมวด</th><th>รายการ</th><th>ผลตรวจ</th><th>หมายเหตุ</th><th>รูป</th></tr></thead>
+      <tbody>${rows.map(r => {
+        const photos = [r[C.photo1],r[C.photo2]].filter(Boolean);
+        const photoHtml = photos.map((p,i)=>`<a href="${p}" target="_blank" class="photo-link">รูป${i+1}</a>`).join('');
+        const bad = isProblem(r);
+        const statusTag = `<span class="tag ${bad?'tag-red':'tag-gray'}">${r[C.status]||'—'}</span>`;
+        return `<tr>
+          <td style="white-space:nowrap">${displayDate(r._d)}</td>
+          <td style="white-space:nowrap;color:var(--sub)">${displayTime(r[C.date])}</td>
+          <td style="white-space:nowrap">${r[C.guard]||'—'}</td>
+          <td style="white-space:nowrap;color:var(--sub)">${(r[C.section]||'').replace(/^\d+\.\s*/,'')}</td>
+          <td>${r[C.item]||'—'}</td>
+          <td>${statusTag}</td>
+          <td>${r[C.note]||'—'}</td>
+          <td>${photoHtml||'—'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(e) { if (e.target===document.getElementById('modalOverlay')) closeModalDirect(); }
+function closeModalDirect() { document.getElementById('modalOverlay').classList.remove('open'); document.body.style.overflow=''; }
+document.addEventListener('keydown', e => { if (e.key==='Escape') closeModalDirect(); });
 
 // ── Load ──────────────────────────────────────
 async function loadData() {
@@ -261,31 +257,21 @@ async function loadData() {
   try {
     const res  = await fetch(SCRIPT_URL + '?action=data');
     const json = await res.json();
-    allData = (json.rows || [])
-      .filter(r => r && r[C.date])
-      .map(r => ({ ...r, _d: toThaiDate(r[C.date]) }));
+    allData = (json.rows||[]).filter(r=>r&&r[C.date]).map(r=>({...r, _d:toThaiDate(r[C.date])}));
 
-    // Build date dropdown
-    const dates = [...new Set(allData.map(r => r._d))].filter(Boolean).sort().reverse();
+    const dates = [...new Set(allData.map(r=>r._d))].filter(Boolean).sort().reverse();
     const sel = document.getElementById('dateFilter');
     sel.innerHTML = '<option value="">ทั้งหมด</option>';
-    dates.forEach(d => {
-      const o = document.createElement('option');
-      o.value = d;
-      o.textContent = displayDate(d);
-      sel.appendChild(o);
-    });
-
-    // Default to today or most recent
+    dates.forEach(d => { const o=document.createElement('option'); o.value=d; o.textContent=displayDate(d); sel.appendChild(o); });
     const today = todayThai();
-    sel.value = dates.includes(today) ? today : (dates[0] || '');
+    sel.value = dates.includes(today) ? today : (dates[0]||'');
 
     document.getElementById('lastUpdate').textContent =
-      'อัปเดต ' + new Date().toLocaleTimeString('th-TH', { timeZone:'Asia/Bangkok', hour:'2-digit', minute:'2-digit' });
+      'อัปเดต ' + new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'});
     render();
   } catch(e) {
     document.getElementById('main').innerHTML =
-      `<div class="msg-error">โหลดข้อมูลไม่ได้ — ตรวจสอบ Apps Script URL หรืออินเตอร์เน็ต<br><small style="opacity:.7">${e.message}</small></div>`;
+      `<div class="msg-error">โหลดข้อมูลไม่ได้<br><small style="opacity:.7">${e.message}</small></div>`;
   }
 }
 
@@ -302,36 +288,65 @@ function getFiltered() {
 
 // ── Render ────────────────────────────────────
 function render() {
-  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e){} });
+  Object.values(charts).forEach(c=>{ try{c.destroy();}catch(e){} });
   charts = {};
 
-  const rows    = getFiltered();
-  const encRows = rows.filter(r => r[C.section] === SECTION_ENC);
-  const badRows = encRows.filter(r => r[C.status] === STATUS_BAD);
-  const guards  = new Set(rows.map(r => r[C.guard]).filter(Boolean));
-  const dayCount = new Set(rows.map(r => r._d).filter(Boolean)).size;
+  const rows      = getFiltered();
+  const badRows   = rows.filter(isProblem);
+  const guards    = new Set(rows.map(r=>r[C.guard]).filter(Boolean));
+  const dayCount  = new Set(rows.map(r=>r._d).filter(Boolean)).size;
+  const secFilter = document.getElementById('sectionFilter').value;
 
   const zoneCnt = {};
-  badRows.forEach(r => { if(r[C.location]) zoneCnt[r[C.location]] = (zoneCnt[r[C.location]]||0)+1; });
+  badRows.forEach(r=>{ if(r[C.location]) zoneCnt[r[C.location]]=(zoneCnt[r[C.location]]||0)+1; });
   const worst = Object.entries(zoneCnt).sort((a,b)=>b[1]-a[1])[0];
+
+  // Section summary (only when showing all sections)
+  const secSummaryHtml = secFilter ? '' : (() => {
+    const cards = SECTIONS.map(s => {
+      const sRows = rows.filter(r=>r[C.section]===s.key);
+      const ok    = sRows.filter(r=>!isProblem(r)).length;
+      const prob  = sRows.filter(isProblem).length;
+      if (!sRows.length) return `<div class="sec-card ${s.cls}">
+        <div class="sec-name">${s.label}</div>
+        <div style="font-size:12px;color:var(--sub)">ไม่มีข้อมูลในช่วงนี้</div>
+      </div>`;
+      return `<div class="sec-card ${s.cls}" style="cursor:pointer" onclick="showSectionDetail('${s.key}','${s.label}')">
+        <div class="sec-name">${s.label}</div>
+        <div class="sec-nums">
+          <div class="sec-num">
+            <div class="sec-num-val">${sRows.length}</div>
+            <div class="sec-num-label">รายการ</div>
+          </div>
+          <div class="sec-num">
+            <div class="sec-num-val ok">${ok}</div>
+            <div class="sec-num-label">ผ่าน / ปกติ</div>
+          </div>
+          <div class="sec-num">
+            <div class="sec-num-val problem">${prob}</div>
+            <div class="sec-num-label">ไม่ผ่าน / พบปัญหา</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="sec-row">${cards}</div>`;
+  })();
 
   document.getElementById('main').innerHTML = `
     <div class="kpi-row">
       <div class="kpi red">
-        <div class="kpi-label">พบการรุกล้ำ</div>
+        <div class="kpi-label">พบปัญหา / ไม่ผ่าน</div>
         <div class="kpi-value">${badRows.length}</div>
         <div class="kpi-sub">รายการ</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">รอบที่ตรวจ</div>
-        <div class="kpi-value">${encRows.length}</div>
-        <div class="kpi-sub">รายการ (หมวดรุกล้ำ)</div>
+        <div class="kpi-label">รายการตรวจ</div>
+        <div class="kpi-value">${rows.length}</div>
+        <div class="kpi-sub">ทุกหมวด</div>
       </div>
       <div class="kpi green">
-        <div class="kpi-label">โซนปัญหามากสุด</div>
-        ${worst
-          ? `<div class="kpi-value">${worst[0]}</div><div class="kpi-sub">${worst[1]} ครั้ง</div>`
-          : '<div class="kpi-sub" style="padding-top:10px">—</div>'}
+        <div class="kpi-label">จุดปัญหามากสุด</div>
+        ${worst ? `<div class="kpi-value" style="font-size:15px;padding-top:4px">${worst[0]}</div><div class="kpi-sub">${worst[1]} ครั้ง</div>` : '<div class="kpi-sub" style="padding-top:10px">—</div>'}
       </div>
       <div class="kpi amber">
         <div class="kpi-label">ผู้ตรวจ</div>
@@ -340,149 +355,162 @@ function render() {
       </div>
     </div>
 
+    ${secSummaryHtml}
+
     <div class="chart-row">
       <div class="card">
-        <div class="card-head">รุกล้ำแต่ละโซน</div>
+        <div class="card-head">ปัญหาแต่ละโซน <span class="click-hint">— คลิกแท่งเพื่อดูรายละเอียด</span></div>
         <div class="chart-wrap"><canvas id="chartZone"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-head">
-          แนวโน้มรายวัน
-          <span class="card-head-note">ทุกวันที่มีข้อมูล</span>
-        </div>
+        <div class="card-head">แนวโน้มรายวัน <span class="card-head-note">ทุกวันที่มีข้อมูล</span></div>
         <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-head">
-        ร้านค้า / จุดที่พบซ้ำ
-        <span class="card-head-note">รวมทุกวัน</span>
+        ร้านค้า / จุดที่พบซ้ำ (รุกล้ำ)
+        <span class="card-head-note">รวมทุกวัน — คลิกแถวเพื่อดูรายละเอียด</span>
       </div>
       <div class="tbl-wrap" id="tblRepeat"></div>
     </div>
 
     <div class="card">
-      <div class="card-head">สถิติผู้ตรวจ</div>
+      <div class="card-head">สถิติผู้ตรวจ <span class="click-hint">— คลิกแถวเพื่อดูรายละเอียด</span></div>
       <div class="tbl-wrap" id="tblGuard"></div>
     </div>
   `;
 
-  renderZoneChart(badRows);
+  renderZoneChart(badRows, rows);
   renderTrendChart();
   renderRepeatTable();
   renderGuardTable(rows);
 }
 
 // ── Zone chart ────────────────────────────────
-function renderZoneChart(badRows) {
+function renderZoneChart(badRows, allRows) {
   const cnt = {};
-  badRows.forEach(r => { if(r[C.location]) cnt[r[C.location]] = (cnt[r[C.location]]||0)+1; });
+  badRows.forEach(r=>{ if(r[C.location]) cnt[r[C.location]]=(cnt[r[C.location]]||0)+1; });
   const sorted = Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
 
   if (!sorted.length) {
-    document.getElementById('chartZone').closest('.chart-wrap').innerHTML =
-      '<div class="msg">ไม่พบข้อมูลรุกล้ำ</div>';
+    document.getElementById('chartZone').closest('.chart-wrap').innerHTML='<div class="msg">ไม่พบข้อมูลปัญหา</div>';
     return;
   }
   charts.zone = new Chart(document.getElementById('chartZone').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: sorted.map(e=>e[0]),
-      datasets: [{ data: sorted.map(e=>e[1]),
-        backgroundColor: sorted.map((_,i)=>i===0?'#B71C1C':'#2D7A50'),
-        borderRadius: 3, borderSkipped: false }]
-    },
-    options: {
-      indexAxis: 'y', responsive:true, maintainAspectRatio:false,
+    type:'bar',
+    data:{ labels:sorted.map(e=>e[0]), datasets:[{ data:sorted.map(e=>e[1]),
+      backgroundColor:sorted.map((_,i)=>i===0?'#B71C1C':'#2D7A50'),
+      hoverBackgroundColor:sorted.map((_,i)=>i===0?'#8B0000':'#1B5E3B'),
+      borderRadius:3, borderSkipped:false }] },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.parsed.x} ครั้ง`}} },
-      scales:{
-        x:{ ticks:{stepSize:1, font:{size:11}}, grid:{color:'#F0EDE7'} },
-        y:{ ticks:{font:{size:11}}, grid:{display:false} }
+      scales:{ x:{ticks:{stepSize:1,font:{size:11}},grid:{color:'#F0EDE7'}}, y:{ticks:{font:{size:11}},grid:{display:false}} },
+      onClick(evt, elements) {
+        if (!elements.length) return;
+        const zone = sorted[elements[0].index][0];
+        const dateVal = document.getElementById('dateFilter').value;
+        const zoneRows = allData.filter(r=>isProblem(r)&&r[C.location]===zone&&(!dateVal||r._d===dateVal))
+          .sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
+        openModal(zone, `พบปัญหา ${zoneRows.length} รายการ`, zoneRows);
       }
     }
   });
 }
 
-// ── Trend chart (all data) ────────────────────
+// ── Trend chart ───────────────────────────────
 function renderTrendChart() {
   const cnt = {};
-  allData.filter(r=>r[C.section]===SECTION_ENC && r[C.status]===STATUS_BAD)
-    .forEach(r=>{ if(r._d) cnt[r._d] = (cnt[r._d]||0)+1; });
+  allData.filter(isProblem).forEach(r=>{ if(r._d) cnt[r._d]=(cnt[r._d]||0)+1; });
   const sorted = Object.entries(cnt).sort((a,b)=>a[0].localeCompare(b[0]));
-
   if (!sorted.length) return;
   charts.trend = new Chart(document.getElementById('chartTrend').getContext('2d'), {
-    type: 'line',
-    data: {
-      labels: sorted.map(e=>displayDate(e[0])),
-      datasets: [{ data: sorted.map(e=>e[1]),
-        borderColor:'#1B5E3B', backgroundColor:'rgba(27,94,59,.08)',
-        tension:.35, fill:true, pointRadius:5,
-        pointBackgroundColor:'#1B5E3B', pointBorderColor:'#fff', pointBorderWidth:2 }]
-    },
-    options: {
+    type:'line',
+    data:{ labels:sorted.map(e=>displayDate(e[0])), datasets:[{ data:sorted.map(e=>e[1]),
+      borderColor:'#1B5E3B', backgroundColor:'rgba(27,94,59,.08)', tension:.35, fill:true,
+      pointRadius:5, pointBackgroundColor:'#1B5E3B', pointBorderColor:'#fff', pointBorderWidth:2, pointHoverRadius:7 }] },
+    options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.parsed.y} ครั้ง`}} },
-      scales:{
-        y:{ beginAtZero:true, ticks:{stepSize:1,font:{size:11}}, grid:{color:'#F0EDE7'} },
-        x:{ ticks:{font:{size:10}}, grid:{display:false} }
+      scales:{ y:{beginAtZero:true,ticks:{stepSize:1,font:{size:11}},grid:{color:'#F0EDE7'}}, x:{ticks:{font:{size:10}},grid:{display:false}} },
+      onClick(evt, elements) {
+        if (!elements.length) return;
+        const dateKey = sorted[elements[0].index][0];
+        const dayRows = allData.filter(r=>isProblem(r)&&r._d===dateKey)
+          .sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
+        openModal(displayDate(dateKey), `พบปัญหา ${dayRows.length} รายการ`, dayRows);
       }
     }
   });
 }
 
-// ── Repeat table (all data) ───────────────────
-function renderRepeatTable() {
-  const allBad = allData.filter(r=>r[C.section]===SECTION_ENC && r[C.status]===STATUS_BAD);
-  const map = {};
-  allBad.forEach(r => {
-    const note = (r[C.note]||'').trim();
-    if (!note) return;
-    const key = r[C.location]+'||'+note;
-    if (!map[key]) map[key] = { loc:r[C.location], note, dates:new Set() };
-    if (r._d) map[key].dates.add(r._d);
-  });
+// ── Section summary click ─────────────────────
+function showSectionDetail(secKey, secLabel) {
+  const dateVal = document.getElementById('dateFilter').value;
+  const sRows = allData.filter(r=>r[C.section]===secKey&&(!dateVal||r._d===dateVal))
+    .sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
+  openModal(secLabel, `${sRows.length} รายการ`, sRows);
+}
 
-  const sorted = Object.values(map).sort((a,b)=>b.dates.size-a.dates.size);
-  const el = document.getElementById('tblRepeat');
-  if (!sorted.length) {
-    el.innerHTML = '<div class="msg">ไม่มีข้อมูล — กรอกชื่อร้านในช่องหมายเหตุในแอปตรวจ</div>';
-    return;
-  }
-  el.innerHTML = `<table>
+// ── Repeat table (encroachment only) ─────────
+function renderRepeatTable() {
+  const encBad = allData.filter(r=>r[C.section]==='1. ตรวจรุกล้ำ'&&r[C.status]==='พบการรุกล้ำ');
+  const map = {};
+  encBad.forEach(r=>{
+    const note=(r[C.note]||'').trim(); if(!note) return;
+    const key=r[C.location]+'||'+note;
+    if(!map[key]) map[key]={loc:r[C.location],note,dates:new Set(),rows:[]};
+    map[key].dates.add(r._d); map[key].rows.push(r);
+  });
+  const sorted=Object.values(map).sort((a,b)=>b.dates.size-a.dates.size);
+  const el=document.getElementById('tblRepeat');
+  if(!sorted.length){ el.innerHTML='<div class="msg">ไม่มีข้อมูล — กรอกชื่อร้านในช่องหมายเหตุในแอปตรวจ</div>'; return; }
+  el.innerHTML=`<table>
     <thead><tr><th>โซน</th><th>ร้านค้า / หมายเหตุ</th><th>พบกี่วัน</th></tr></thead>
-    <tbody>${sorted.map(v=>`<tr>
+    <tbody>${sorted.map((v,i)=>`<tr class="clickable" onclick="showShopDetail(${i})">
       <td style="color:var(--sub);font-size:12px">${v.loc}</td>
       <td><strong>${v.note}</strong></td>
       <td><span class="tag ${v.dates.size>=3?'tag-red':v.dates.size>=2?'tag-amber':'tag-gray'}">${v.dates.size} วัน</span></td>
     </tr>`).join('')}</tbody>
   </table>`;
+  window._repeatData=sorted;
+}
+function showShopDetail(idx){
+  const v=window._repeatData[idx]; if(!v) return;
+  openModal(v.note, `${v.loc} — พบ ${v.dates.size} วัน / ${v.rows.length} รายการ`,
+    v.rows.sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||'')));
 }
 
 // ── Guard table ───────────────────────────────
-function renderGuardTable(rows) {
-  const stats = {};
-  rows.forEach(r => {
-    const g = (r[C.guard]||'').trim();
-    if (!g) return;
-    if (!stats[g]) stats[g] = { name:g, total:0, dates:new Set(), problems:0 };
-    stats[g].total++;
-    if (r._d) stats[g].dates.add(r._d);
-    if ([STATUS_BAD,'ไม่ผ่าน','ผิดปกติ'].includes(r[C.status])) stats[g].problems++;
+function renderGuardTable(rows){
+  const stats={};
+  rows.forEach(r=>{
+    const g=(r[C.guard]||'').trim(); if(!g) return;
+    if(!stats[g]) stats[g]={name:g,total:0,dates:new Set(),problems:0,rows:[]};
+    stats[g].total++; stats[g].rows.push(r);
+    if(r._d) stats[g].dates.add(r._d);
+    if(isProblem(r)) stats[g].problems++;
   });
-  const sorted = Object.values(stats).sort((a,b)=>b.total-a.total);
-  const el = document.getElementById('tblGuard');
-  if (!sorted.length) { el.innerHTML='<div class="msg">ไม่มีข้อมูล</div>'; return; }
-  el.innerHTML = `<table>
+  const sorted=Object.values(stats).sort((a,b)=>b.total-a.total);
+  const el=document.getElementById('tblGuard');
+  if(!sorted.length){ el.innerHTML='<div class="msg">ไม่มีข้อมูล</div>'; return; }
+  el.innerHTML=`<table>
     <thead><tr><th>ชื่อผู้ตรวจ</th><th>รายการตรวจ</th><th>วันที่ตรวจ</th><th>พบปัญหา</th></tr></thead>
-    <tbody>${sorted.map(v=>`<tr>
+    <tbody>${sorted.map((v,i)=>`<tr class="clickable" onclick="showGuardDetail(${i})">
       <td>${v.name}</td>
       <td>${v.total} รายการ</td>
       <td><span class="tag tag-green">${v.dates.size} วัน</span></td>
       <td><span class="tag ${v.problems>0?'tag-red':'tag-gray'}">${v.problems}</span></td>
     </tr>`).join('')}</tbody>
   </table>`;
+  window._guardData=sorted;
+}
+function showGuardDetail(idx){
+  const v=window._guardData[idx]; if(!v) return;
+  openModal(v.name, `ตรวจ ${v.total} รายการ / ${v.dates.size} วัน`,
+    v.rows.sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||'')));
 }
 
 loadData();
