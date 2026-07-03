@@ -6,25 +6,22 @@
  * 1. เปิด Google Sheet ที่ต้องการบันทึกข้อมูล
  * 2. เมนู Extensions > Apps Script
  * 3. ลบโค้ดเดิมในไฟล์ Code.gs ทั้งหมด แล้ววางโค้ดนี้แทน
- * 4. Deploy > New deployment > เลือกประเภท "Web app"
- *    - Execute as: Me
- *    - Who has access: Anyone
- * 5. กด Deploy แล้วอนุญาตสิทธิ์ที่ขอ (Sheet + Drive)
- * 6. คัดลอกลิงก์ที่ลงท้ายด้วย /exec แล้วนำไปวางในตัวแปร SHEET_URL
- *    ของไฟล์ market_inspection_tool.html (ค้นหา "SHEET_URL")
+ * 4. Deploy > Manage deployments > แก้ไข deployment ปัจจุบัน > New version > Deploy
  *
- * คอลัมน์ใน Sheet (เรียงตามลำดับ):
+ * คอลัมน์ใน Sheet1 (เรียงตามลำดับ):
  * วันที่ | ผู้ตรวจ | หมวด | สถานที่/โซน | รายการ | ผลตรวจ | หมายเหตุ | รูปภาพ1 | รูปภาพ2 | เวลาบันทึก
  *
  * ชีต "setting": สร้างชีตใหม่ชื่อ "setting" คอลัมน์ A แถวที่ 2 เป็นต้นไป
  * ใส่รายชื่อ รปภ. ทีละแถว — เครื่องมือจะดึงรายชื่อนี้ไปแสดงเป็น dropdown อัตโนมัติ
- *
- * รายละเอียดเพิ่มเติม: ดูไฟล์ google_sheet_setup.md
  */
 
-// ใส่ ID ของ Google Sheet ที่นี่ (ดูจาก URL ของ Sheet: .../spreadsheets/d/【ID】/edit)
-const SPREADSHEET_ID = "YOUR_SPREADSHEET_ID_HERE";
+// ID ของ Google Sheet ที่บันทึกข้อมูลตรวจ
+// (ดูจาก URL: https://docs.google.com/spreadsheets/d/【ID】/edit)
+const SPREADSHEET_ID = "1BGtG2oCqu6yTBm_cqE71ReRhKVjrGsqoMmIlKuPx6qc";
 
+// ─────────────────────────────────────────────
+// รับข้อมูลตรวจจากแอป และบันทึกลง Sheet1
+// ─────────────────────────────────────────────
 function doPost(e) {
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getActiveSheet();
   const data = JSON.parse(e.postData.contents);
@@ -53,10 +50,42 @@ function doPost(e) {
   return ContentService.createTextOutput("OK");
 }
 
+// ─────────────────────────────────────────────
+// doGet: รองรับ 3 endpoint
+//   ?action=data   → คืนข้อมูลทุกแถวใน Sheet1 (สำหรับ dashboard)
+//   ?action=shops  → คืนรายชื่อร้านค้าจาก spreadsheet ทะเบียน
+//   (ไม่มี action) → คืนรายชื่อผู้ตรวจจากชีต setting
+// ─────────────────────────────────────────────
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || '';
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 
-  // --- ดึงชื่อร้านค้า (จาก spreadsheet ทะเบียนร้านค้า คอลัมน์ S) ---
+  // ── action=data: ส่งข้อมูลทั้งหมดให้ dashboard ──
+  if (action === 'data') {
+    const sheet = ss.getSheets()[0]; // Sheet1 (แถวแรกเป็น header)
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) {
+      return ContentService.createTextOutput(JSON.stringify({ rows: [] }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const lastCol = sheet.getLastColumn();
+    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    const dataRows = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+    const rows = dataRows.map(row => {
+      const obj = {};
+      headers.forEach((h, i) => {
+        let val = row[i];
+        // แปลง Date object → ISO string เพื่อให้ dashboard แสดงวันที่ถูกต้อง
+        if (val instanceof Date) val = val.toISOString();
+        obj[h] = val;
+      });
+      return obj;
+    });
+    return ContentService.createTextOutput(JSON.stringify({ rows }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // ── action=shops: ดึงชื่อร้านค้าจาก spreadsheet ทะเบียนร้านค้า ──
   if (action === 'shops') {
     try {
       const SHOP_SS_ID = "1VqB8yiqny-UZNbY12AJZNecYPDff0-qkrv9kJmy-bfQ";
@@ -81,8 +110,7 @@ function doGet(e) {
     }
   }
 
-  // --- ค่าเริ่มต้น: รายชื่อผู้ตรวจ (จาก setting sheet) ---
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  // ── default: รายชื่อผู้ตรวจจากชีต setting ──
   const sheet = ss.getSheetByName("setting");
   let names = [];
   if (sheet) {
@@ -97,6 +125,9 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+// ─────────────────────────────────────────────
+// Helper functions
+// ─────────────────────────────────────────────
 function getOrCreateFolder(name) {
   const folders = DriveApp.getFoldersByName(name);
   return folders.hasNext() ? folders.next() : DriveApp.createFolder(name);
