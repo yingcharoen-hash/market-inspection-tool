@@ -104,9 +104,9 @@
     .heatmap-table thead th:first-child, .round-table thead th:first-child { position: sticky; left: 0; background: var(--bg); z-index: 3; }
     .hm-cell { width: 46px; height: 26px; border-radius: 4px; display: block; }
     .hm-cell.no-data { background: #F0EDE7; }
-    .hm-cell.ok  { background: #90CAF9; cursor: pointer; }
+    .hm-cell.ok  { background: #81C784; cursor: pointer; }
     .hm-cell.bad { background: #EF5350; cursor: pointer; }
-    .hm-cell.ok:hover  { background: #64B5F6; }
+    .hm-cell.ok:hover  { background: #66BB6A; }
     .hm-cell.bad:hover { background: #C62828; }
     .round-cell { width: 40px; height: 26px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
     .round-cell.done { background: var(--green-light); color: var(--green); }
@@ -562,7 +562,7 @@ function renderHeatmap(rows) {
   html += `</tbody></table>
     <div class="hm-legend">
       <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#F0EDE7"></span>ไม่มีข้อมูล</div>
-      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#90CAF9"></span>ไม่พบ</div>
+      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#81C784"></span>ไม่พบ</div>
       <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#EF5350"></span>พบรุกล้ำ</div>
     </div></div>`;
 
