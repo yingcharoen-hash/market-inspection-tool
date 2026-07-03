@@ -95,6 +95,24 @@
     .tag-blue  { background: #E3F2FD; color: #1565C0; }
     .tag-gray  { background: #F0EDE7; color: var(--sub); }
 
+    /* Heatmap + Round grid */
+    .heatmap-wrap { overflow-x: auto; padding: 14px; }
+    .heatmap-table, .round-table { border-collapse: separate; border-spacing: 3px; min-width: max-content; }
+    .heatmap-table th, .round-table th { font-size: 11px; font-weight: 700; color: var(--sub); text-align: center; padding: 0 4px 6px; white-space: nowrap; }
+    .heatmap-table td.zone-label, .round-table td.guard-name { font-size: 12px; padding: 2px 10px 2px 0; white-space: nowrap; color: var(--text); }
+    .hm-cell { width: 46px; height: 26px; border-radius: 4px; display: block; }
+    .hm-cell.no-data { background: #F0EDE7; }
+    .hm-cell.ok  { background: #90CAF9; cursor: pointer; }
+    .hm-cell.bad { background: #EF5350; cursor: pointer; }
+    .hm-cell.ok:hover  { background: #64B5F6; }
+    .hm-cell.bad:hover { background: #C62828; }
+    .round-cell { width: 40px; height: 26px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+    .round-cell.done { background: var(--green-light); color: var(--green); }
+    .round-cell.miss { background: #F0EDE7; color: transparent; }
+    .hm-legend { display: flex; gap: 16px; padding: 0 14px 12px; flex-wrap: wrap; }
+    .hm-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--sub); }
+    .hm-legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
     /* States */
     .msg { text-align: center; padding: 32px 20px; color: var(--sub); font-size: 13px; }
     .msg-error { background: var(--red-light); color: var(--red); padding: 16px; border-radius: 6px; font-size: 13px; text-align: center; line-height: 1.8; margin: 16px; }
@@ -387,6 +405,16 @@ function render() {
     </div>
 
     <div class="card">
+      <div class="card-head">รูปแบบการรุกล้ำตามช่วงเวลา <span class="card-head-note">— คลิกช่องเพื่อดูรายละเอียด</span></div>
+      <div id="heatmapWrap"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">รอบที่ รปภ. ตรวจ (รุกล้ำ) <span class="card-head-note">✓ = ส่งข้อมูลแล้ว</span></div>
+      <div id="roundCompletion"></div>
+    </div>
+
+    <div class="card">
       <div class="card-head">
         ร้านค้า / จุดที่พบซ้ำ (รุกล้ำ)
         <span class="card-head-note">รวมทุกวัน — คลิกแถวเพื่อดูรายละเอียด</span>
@@ -402,6 +430,8 @@ function render() {
 
   renderZoneChart(badRows, rows);
   renderTrendChart();
+  renderHeatmap(rows);
+  renderRoundCompletion(rows);
   renderRepeatTable();
   renderGuardTable(rows);
 }
@@ -470,6 +500,108 @@ function showSectionDetail(secKey, secLabel) {
   const sRows = allData.filter(r=>r[C.section]===secKey&&(!dateVal||r._d===dateVal))
     .sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
   openModal(secLabel, `${sRows.length} รายการ`, sRows);
+}
+
+// ── Heatmap: zone × round ─────────────────────
+function renderHeatmap(rows) {
+  const encRows = rows.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
+  const el = document.getElementById('heatmapWrap');
+
+  // Collect zones & rounds from ALL data (ไม่กรองวัน เพื่อให้แกน X/Y ครบทุกวัน)
+  const allEnc = allData.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
+  const zones  = [...new Set(allEnc.map(r => r[C.location]).filter(Boolean))];
+  const rounds = [...new Set(allEnc.map(r => itemTime(r[C.item])).filter(t => t !== '—'))].sort();
+
+  if (!zones.length || !rounds.length) {
+    el.innerHTML = '<div class="msg">ไม่มีข้อมูลหมวดรุกล้ำ</div>'; return;
+  }
+
+  // Build lookup จากข้อมูลที่ filter อยู่
+  const lookup = {};
+  encRows.forEach(r => {
+    const t = itemTime(r[C.item]); const z = r[C.location];
+    if (t === '—' || !z) return;
+    const k = z + '|' + t;
+    if (!lookup[k]) lookup[k] = [];
+    lookup[k].push(r);
+  });
+
+  let html = `<div class="heatmap-wrap"><table class="heatmap-table">
+    <thead><tr><th></th>${rounds.map(t => `<th>${t}</th>`).join('')}</tr></thead>
+    <tbody>`;
+
+  zones.forEach(zone => {
+    html += `<tr><td class="zone-label">${zone}</td>`;
+    rounds.forEach(time => {
+      const k = zone + '|' + time;
+      const cells = lookup[k] || [];
+      let cls = 'no-data', title = 'ไม่มีข้อมูล', onclick = '';
+      if (cells.length) {
+        const hasBad = cells.some(r => r[C.status] === 'พบการรุกล้ำ');
+        cls = hasBad ? 'bad' : 'ok';
+        title = hasBad ? 'พบรุกล้ำ' : 'ไม่พบ';
+        onclick = `onclick="openHmDetail(${JSON.stringify(k)})"`;
+      }
+      html += `<td><div class="hm-cell ${cls}" title="${title}" ${onclick}></div></td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += `</tbody></table>
+    <div class="hm-legend">
+      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#F0EDE7"></span>ไม่มีข้อมูล</div>
+      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#90CAF9"></span>ไม่พบ</div>
+      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#EF5350"></span>พบรุกล้ำ</div>
+    </div></div>`;
+
+  el.innerHTML = html;
+  window._hmLookup = lookup;
+}
+function openHmDetail(key) {
+  const rows = (window._hmLookup[key] || []).sort((a,b)=>(a[C.guard]||'').localeCompare(b[C.guard]||''));
+  const [zone, time] = key.split('|');
+  openModal(`${zone} — รอบ ${time}`, `${rows.length} รายการ`, rows);
+}
+
+// ── Round completion: guard × round ───────────
+function renderRoundCompletion(rows) {
+  const encRows = rows.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
+  const el = document.getElementById('roundCompletion');
+
+  const allEnc = allData.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
+  const rounds  = [...new Set(allEnc.map(r => itemTime(r[C.item])).filter(t => t !== '—'))].sort();
+  const guards  = [...new Set(encRows.map(r => r[C.guard]).filter(Boolean))].sort();
+
+  if (!guards.length || !rounds.length) {
+    el.innerHTML = '<div class="msg">ไม่มีข้อมูล</div>'; return;
+  }
+
+  const guardRounds = {};
+  encRows.forEach(r => {
+    const g = r[C.guard]; const t = itemTime(r[C.item]);
+    if (!g || t === '—') return;
+    if (!guardRounds[g]) guardRounds[g] = new Set();
+    guardRounds[g].add(t);
+  });
+
+  let html = `<div class="heatmap-wrap"><table class="round-table">
+    <thead><tr><th style="text-align:left">รปภ.</th>${rounds.map(t=>`<th>${t}</th>`).join('')}<th>รวม</th></tr></thead>
+    <tbody>`;
+
+  guards.forEach(guard => {
+    const done = guardRounds[guard] || new Set();
+    const count = rounds.filter(t => done.has(t)).length;
+    const pct = Math.round(count / rounds.length * 100);
+    const tagCls = pct === 100 ? 'tag-green' : pct >= 50 ? 'tag-amber' : 'tag-red';
+    html += `<tr><td class="guard-name">${guard}</td>`;
+    rounds.forEach(t => {
+      html += `<td><div class="round-cell ${done.has(t) ? 'done' : 'miss'}">${done.has(t) ? '✓' : ''}</div></td>`;
+    });
+    html += `<td><span class="tag ${tagCls}">${count}/${rounds.length}</span></td></tr>`;
+  });
+
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
 }
 
 // ── Repeat table (encroachment only) ─────────
