@@ -99,7 +99,8 @@
     .heatmap-wrap { overflow-x: auto; padding: 14px; }
     .heatmap-table, .round-table { border-collapse: separate; border-spacing: 3px; min-width: max-content; }
     .heatmap-table th, .round-table th { font-size: 11px; font-weight: 700; color: var(--sub); text-align: center; padding: 0 4px 6px; white-space: nowrap; }
-    .heatmap-table td.zone-label, .round-table td.guard-name { font-size: 12px; padding: 2px 10px 2px 0; white-space: nowrap; color: var(--text); }
+    .heatmap-table td.zone-label, .round-table td.guard-name { font-size: 12px; padding: 2px 10px 2px 0; white-space: nowrap; color: var(--text); position: sticky; left: 0; background: var(--card); z-index: 2; box-shadow: 2px 0 4px rgba(0,0,0,.06); }
+    .heatmap-table thead th:first-child, .round-table thead th:first-child { position: sticky; left: 0; background: var(--bg); z-index: 3; }
     .hm-cell { width: 46px; height: 26px; border-radius: 4px; display: block; }
     .hm-cell.no-data { background: #F0EDE7; }
     .hm-cell.ok  { background: #90CAF9; cursor: pointer; }
@@ -550,7 +551,7 @@ function renderHeatmap(rows) {
         const hasBad = cells.some(r => r[C.status] === 'พบการรุกล้ำ');
         cls = hasBad ? 'bad' : 'ok';
         title = hasBad ? 'พบรุกล้ำ' : 'ไม่พบ';
-        onclick = `onclick="openHmDetail(${JSON.stringify(k)})"`;
+        onclick = `onclick="openHmDetail('${k}')"`;
       }
       html += `<td><div class="hm-cell ${cls}" title="${title}" ${onclick}></div></td>`;
     });
