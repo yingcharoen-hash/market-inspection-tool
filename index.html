@@ -498,9 +498,12 @@ function buildSheetRows(){
           status: c.status===1 ? "ตรวจแล้ว ไม่พบรุกล้ำ" : "พบการรุกล้ำ",
           encType: c.encType || "",
           note: c.note || "",
-          photos: [
+          photos: c.status===2 ? [
             {name:"shop_"+zone+"_"+round+".jpg", base64:(c.photos&&c.photos.shop)||null},
             {name:"spot_"+zone+"_"+round+".jpg", base64:(c.photos&&c.photos.spot)||null}
+          ] : [
+            {name:"pass_"+zone+"_"+round+".jpg", base64:(c.photos&&c.photos.pass)||null},
+            {name:"", base64:null}
           ],
           timestamp: ts
         });
@@ -698,7 +701,7 @@ function renderTab1(){
       btn.textContent = round;
       btn.onclick = ()=>{
         cell.status = (cell.status + 1) % 3;
-        if(cell.status !== 2){ cell.encType=""; cell.note=""; cell.photos = {shop:null, spot:null}; }
+        cell.encType=""; cell.note=""; cell.photos = {shop:null, spot:null, pass:null};
         saveState();
         renderTab1();
       };
@@ -764,6 +767,26 @@ function renderTab1(){
         box.appendChild(photoRow);
 
         card.appendChild(box);
+      }
+      if(cell.status === 1){
+        const passBox = document.createElement("div");
+        passBox.className = "note-box";
+        passBox.style.borderLeftColor = "var(--green)";
+        const passLabel = document.createElement("label");
+        passLabel.textContent = "ไม่พบรุกล้ำ — รอบ " + round;
+        passLabel.style.cssText = "font-size:12px;font-weight:700;color:var(--green);display:block;margin-bottom:4px;";
+        passBox.appendChild(passLabel);
+        const hint = document.createElement("div");
+        hint.style.cssText = "font-size:11px;color:var(--muted);margin-bottom:8px;";
+        hint.textContent = "ถ่ายรูปประกอบได้ (ไม่บังคับ)";
+        passBox.appendChild(hint);
+        const passPhotoRow = document.createElement("div");
+        passPhotoRow.className = "photo-row";
+        passPhotoRow.appendChild(createPhotoSlot("ภาพประกอบการตรวจ",
+          (cell.photos && cell.photos.pass) || null,
+          (val)=>{ if(!cell.photos) cell.photos={}; cell.photos.pass=val; saveState(); renderTab1(); }));
+        passBox.appendChild(passPhotoRow);
+        card.appendChild(passBox);
       }
     });
 
