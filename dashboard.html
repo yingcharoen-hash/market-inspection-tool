@@ -3,469 +3,489 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard ตรวจตลาด</title>
+  <title>ตลาดยิ่งเจริญ — Dashboard ตรวจตลาด</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f5f5f7;
-      color: #1d1d1f;
-      min-height: 100vh;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:       #1B5E3B;
+      --green-mid:   #2D7A50;
+      --green-light: #EBF5EE;
+      --amber:       #B86800;
+      --amber-light: #FFF3E0;
+      --red:         #B71C1C;
+      --red-light:   #FEECEC;
+      --bg:          #F5F4F0;
+      --card:        #FFFFFF;
+      --text:        #1A1A1A;
+      --sub:         #6B6B66;
+      --border:      #E0DDD5;
     }
-    .header {
-      background: #fff;
-      border-bottom: 1px solid #e5e5ea;
-      padding: 14px 20px;
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── Top bar ─────────────────────────────── */
+    .topbar {
+      background: var(--green);
+      color: #fff;
+      padding: 0 20px;
+      height: 52px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 100;
     }
-    .header-title { font-size: 17px; font-weight: 700; color: #1d1d1f; }
-    .header-sub { font-size: 12px; color: #86868b; margin-top: 2px; }
-    .refresh-btn {
-      padding: 8px 16px;
-      background: #00b4b4;
+    .topbar-brand { font-size: 12px; font-weight: 600; opacity: .75; letter-spacing: .5px; }
+    .topbar-title { font-size: 16px; font-weight: 700; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .topbar-time  { font-size: 12px; opacity: .7; }
+    .btn-refresh {
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.3);
       color: #fff;
-      border: none;
-      border-radius: 20px;
-      font-size: 14px;
+      padding: 5px 14px;
+      border-radius: 4px;
+      font-size: 13px;
       font-family: inherit;
       cursor: pointer;
       font-weight: 600;
     }
-    .refresh-btn:active { opacity: 0.8; }
-    .filter-bar {
-      background: #fff;
-      border-bottom: 1px solid #e5e5ea;
+    .btn-refresh:hover { background: rgba(255,255,255,.25); }
+    .btn-refresh:active { background: rgba(255,255,255,.1); }
+
+    /* ── Filter bar ──────────────────────────── */
+    .filterbar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
       padding: 10px 20px;
       display: flex;
-      gap: 16px;
+      gap: 20px;
       align-items: center;
       flex-wrap: wrap;
     }
-    .filter-group { display: flex; align-items: center; gap: 8px; }
-    .filter-group label { font-size: 13px; color: #86868b; white-space: nowrap; }
-    .filter-group select {
-      padding: 6px 10px;
-      border: 1px solid #d2d2d7;
-      border-radius: 8px;
+    .fi { display: flex; align-items: center; gap: 8px; }
+    .fi label {
+      font-size: 11px;
+      color: var(--sub);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      white-space: nowrap;
+    }
+    .fi select {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 5px 10px;
       font-size: 13px;
       font-family: inherit;
-      color: #1d1d1f;
-      background: #fff;
+      color: var(--text);
+      background: var(--bg);
       cursor: pointer;
     }
-    .main { padding: 16px; max-width: 900px; margin: 0 auto; }
+    .fi select:focus { outline: 2px solid var(--green); border-color: transparent; }
 
-    /* KPI Cards */
-    .kpi-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
-    .kpi-card {
-      background: #fff;
-      border-radius: 16px;
-      padding: 16px;
+    /* ── Layout ──────────────────────────────── */
+    .main { padding: 16px 20px; max-width: 1100px; margin: 0 auto; }
+
+    /* ── KPI ─────────────────────────────────── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 700px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+
+    .kpi {
+      background: var(--card);
+      border-radius: 6px;
+      padding: 14px 16px;
+      border-left: 3px solid var(--border);
       box-shadow: 0 1px 3px rgba(0,0,0,.07);
     }
-    .kpi-label { font-size: 12px; color: #86868b; margin-bottom: 4px; }
-    .kpi-value { font-size: 30px; font-weight: 700; color: #1d1d1f; line-height: 1; }
-    .kpi-sub { font-size: 12px; color: #86868b; margin-top: 4px; }
-    .kpi-card.danger .kpi-value { color: #ff3b30; }
-    .kpi-card.teal .kpi-value { color: #00b4b4; }
+    .kpi.red    { border-left-color: var(--red); }
+    .kpi.green  { border-left-color: var(--green); }
+    .kpi.amber  { border-left-color: var(--amber); }
+    .kpi-label  { font-size: 11px; color: var(--sub); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+    .kpi-value  { font-size: 34px; font-weight: 700; line-height: 1; }
+    .kpi.red   .kpi-value { color: var(--red); }
+    .kpi.green .kpi-value { color: var(--green); font-size: 15px; padding-top: 4px; }
+    .kpi-sub   { font-size: 11px; color: var(--sub); margin-top: 4px; }
 
-    /* Section Cards */
+    /* ── Cards ───────────────────────────────── */
     .card {
-      background: #fff;
-      border-radius: 16px;
-      padding: 18px;
+      background: var(--card);
+      border-radius: 6px;
       margin-bottom: 14px;
       box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      overflow: hidden;
     }
-    .card-title { font-size: 14px; font-weight: 700; color: #1d1d1f; margin-bottom: 14px; }
-    .chart-wrap { position: relative; height: 220px; }
+    .card-head {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--green);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-head-note { font-weight: 400; color: var(--sub); text-transform: none; letter-spacing: 0; font-size: 11px; }
+    .chart-wrap { position: relative; height: 200px; padding: 14px; }
 
-    /* Tables */
+    /* ── Two-col charts ──────────────────────── */
+    .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    @media (max-width: 700px) { .chart-row { grid-template-columns: 1fr; } }
+
+    /* ── Tables ──────────────────────────────── */
     .tbl-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th {
+    thead th {
       text-align: left;
-      padding: 7px 10px;
-      background: #f5f5f7;
-      color: #86868b;
-      font-weight: 600;
+      padding: 8px 14px;
       font-size: 11px;
+      font-weight: 700;
+      color: var(--sub);
       text-transform: uppercase;
-      letter-spacing: 0.3px;
+      letter-spacing: .4px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
     }
-    td { padding: 9px 10px; border-bottom: 1px solid #f5f5f7; vertical-align: top; }
-    tr:last-child td { border-bottom: none; }
-    .badge {
+    tbody td { padding: 9px 14px; border-bottom: 1px solid #F0EDE7; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--green-light); }
+
+    .tag {
       display: inline-block;
       padding: 2px 8px;
-      border-radius: 10px;
+      border-radius: 3px;
       font-size: 11px;
       font-weight: 700;
     }
-    .badge-red { background: #fff0ef; color: #ff3b30; }
-    .badge-orange { background: #fff8f0; color: #ff9500; }
-    .badge-green { background: #f0fff4; color: #34c759; }
-    .badge-gray { background: #f5f5f7; color: #86868b; }
-    .badge-teal { background: #e6fafa; color: #00b4b4; }
+    .tag-red    { background: var(--red-light);   color: var(--red); }
+    .tag-amber  { background: var(--amber-light);  color: var(--amber); }
+    .tag-green  { background: var(--green-light);  color: var(--green); }
+    .tag-gray   { background: #F0EDE7; color: var(--sub); }
 
-    .empty-msg {
-      text-align: center;
-      padding: 30px 20px;
-      color: #86868b;
-      font-size: 13px;
-    }
-    .loading-msg {
-      text-align: center;
-      padding: 60px 20px;
-      color: #86868b;
-      font-size: 15px;
-    }
-    .error-card {
-      background: #fff0ef;
-      border-radius: 16px;
-      padding: 20px;
-      text-align: center;
-      color: #ff3b30;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-    .error-card small { color: #86868b; font-size: 12px; }
+    /* ── States ──────────────────────────────── */
+    .msg { text-align: center; padding: 32px 20px; color: var(--sub); font-size: 13px; }
+    .msg-error { background: var(--red-light); color: var(--red); padding: 16px; border-radius: 6px; font-size: 13px; text-align: center; line-height: 1.8; margin: 16px; }
   </style>
 </head>
 <body>
 
-<div class="header">
+<div class="topbar">
   <div>
-    <div class="header-title">📊 Dashboard ตรวจตลาด</div>
-    <div class="header-sub" id="lastUpdate">กำลังโหลด...</div>
+    <div class="topbar-brand">ตลาดยิ่งเจริญ</div>
+    <div class="topbar-title">Dashboard ตรวจตลาด</div>
   </div>
-  <button class="refresh-btn" onclick="loadData()">↻ รีเฟรช</button>
+  <div class="topbar-right">
+    <span class="topbar-time" id="lastUpdate"></span>
+    <button class="btn-refresh" onclick="loadData()">รีเฟรช</button>
+  </div>
 </div>
 
-<div class="filter-bar">
-  <div class="filter-group">
-    <label>วันที่:</label>
+<div class="filterbar">
+  <div class="fi">
+    <label>วันที่</label>
     <select id="dateFilter" onchange="render()">
       <option value="">ทั้งหมด</option>
     </select>
   </div>
-  <div class="filter-group">
-    <label>หัวข้อ:</label>
+  <div class="fi">
+    <label>หมวด</label>
     <select id="sectionFilter" onchange="render()">
       <option value="">ทั้งหมด</option>
-      <option value="1. ตรวจรุกล้ำ">1. ตรวจรุกล้ำ</option>
-      <option value="2. ตรวจความสะอาด">2. ตรวจความสะอาด</option>
-      <option value="3. ตรวจบัตรสมาชิก">3. ตรวจบัตรสมาชิก</option>
+      <option value="1. ตรวจรุกล้ำ">ตรวจรุกล้ำ</option>
+      <option value="2. ตรวจความสะอาด">ตรวจความสะอาด</option>
+      <option value="3. ตรวจบัตรสมาชิก">ตรวจบัตรสมาชิก</option>
     </select>
   </div>
 </div>
 
 <div class="main" id="main">
-  <div class="loading-msg">⏳ กำลังโหลดข้อมูล...</div>
+  <div class="msg">กำลังโหลดข้อมูล...</div>
 </div>
 
 <script>
-// ============================================================
-// CONFIG — ใส่ URL เดียวกับแอปตรวจ (Apps Script Web App URL)
-// ============================================================
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3N1gxp9Gf94x-dXNbqgzUpirfQuy44YO6-rgcnS_OTVdAzp5Nw10cigkCcoy_uNlu/exec";
 
-let allRows = [];
-let charts = {};
+// Thai column names from Sheet1
+const C = {
+  date:     'วันที่',
+  guard:    'ผู้ตรวจ',
+  section:  'หมวด',
+  location: 'สถานที่/โซน',
+  item:     'รายการ',
+  status:   'ผลตรวจ',
+  note:     'หมายเหตุ'
+};
+const STATUS_BAD  = 'พบการรุกล้ำ';
+const SECTION_ENC = '1. ตรวจรุกล้ำ';
 
-// ============================================================
-// โหลดข้อมูล
-// ============================================================
+let allData = [];
+let charts  = {};
+
+// ── Date helpers ──────────────────────────────
+function toThaiDate(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' }); // YYYY-MM-DD
+}
+function todayThai() {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' });
+}
+function displayDate(s) { // "2026-07-03" → "3 ก.ค. 2569"
+  if (!s) return '';
+  const mo = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const [y, m, d] = s.split('-');
+  return `${parseInt(d)} ${mo[parseInt(m)-1]} ${parseInt(y)+543}`;
+}
+
+// ── Load ──────────────────────────────────────
 async function loadData() {
-  document.getElementById("main").innerHTML = '<div class="loading-msg">⏳ กำลังโหลดข้อมูล...</div>';
+  document.getElementById('main').innerHTML = '<div class="msg">กำลังโหลดข้อมูล...</div>';
   try {
-    const res = await fetch(SCRIPT_URL + "?action=data");
+    const res  = await fetch(SCRIPT_URL + '?action=data');
     const json = await res.json();
-    allRows = (json.rows || []).filter(r => r && r.date);
+    allData = (json.rows || [])
+      .filter(r => r && r[C.date])
+      .map(r => ({ ...r, _d: toThaiDate(r[C.date]) }));
 
-    // เติม date filter
-    const dates = [...new Set(allRows.map(r => r.date))].filter(Boolean).sort().reverse();
-    const sel = document.getElementById("dateFilter");
+    // Build date dropdown
+    const dates = [...new Set(allData.map(r => r._d))].filter(Boolean).sort().reverse();
+    const sel = document.getElementById('dateFilter');
     sel.innerHTML = '<option value="">ทั้งหมด</option>';
     dates.forEach(d => {
-      const opt = document.createElement("option");
-      opt.value = d;
-      opt.textContent = d;
-      sel.appendChild(opt);
+      const o = document.createElement('option');
+      o.value = d;
+      o.textContent = displayDate(d);
+      sel.appendChild(o);
     });
 
-    document.getElementById("lastUpdate").textContent =
-      "อัปเดตล่าสุด " + new Date().toLocaleTimeString("th-TH", {timeZone:"Asia/Bangkok", hour:"2-digit", minute:"2-digit"});
+    // Default to today or most recent
+    const today = todayThai();
+    sel.value = dates.includes(today) ? today : (dates[0] || '');
+
+    document.getElementById('lastUpdate').textContent =
+      'อัปเดต ' + new Date().toLocaleTimeString('th-TH', { timeZone:'Asia/Bangkok', hour:'2-digit', minute:'2-digit' });
     render();
-  } catch(err) {
-    document.getElementById("main").innerHTML =
-      `<div class="error-card">
-        ⚠️ โหลดข้อมูลไม่ได้<br>
-        ตรวจสอบว่าได้อัปเดต Apps Script (doGet) และ Deploy ใหม่แล้ว<br>
-        <small>${err.message}</small>
-      </div>`;
+  } catch(e) {
+    document.getElementById('main').innerHTML =
+      `<div class="msg-error">โหลดข้อมูลไม่ได้ — ตรวจสอบ Apps Script URL หรืออินเตอร์เน็ต<br><small style="opacity:.7">${e.message}</small></div>`;
   }
 }
 
-// ============================================================
-// กรองข้อมูล
-// ============================================================
+// ── Filter ────────────────────────────────────
 function getFiltered() {
-  const date = document.getElementById("dateFilter").value;
-  const section = document.getElementById("sectionFilter").value;
-  return allRows.filter(r => {
-    if (date && r.date !== date) return false;
-    if (section && r.section !== section) return false;
+  const date = document.getElementById('dateFilter').value;
+  const sec  = document.getElementById('sectionFilter').value;
+  return allData.filter(r => {
+    if (date && r._d         !== date) return false;
+    if (sec  && r[C.section] !== sec)  return false;
     return true;
   });
 }
 
-// ============================================================
-// Render ทั้งหมด
-// ============================================================
+// ── Render ────────────────────────────────────
 function render() {
   Object.values(charts).forEach(c => { try { c.destroy(); } catch(e){} });
   charts = {};
 
-  const rows = getFiltered();
-  const encRows = rows.filter(r => r.section === "1. ตรวจรุกล้ำ");
-  const badRows = encRows.filter(r => r.status === "พบการรุกล้ำ");
-  const allGuards = new Set(rows.map(r => r.guardName).filter(Boolean));
-  const allDates = new Set(rows.map(r => r.date).filter(Boolean));
+  const rows    = getFiltered();
+  const encRows = rows.filter(r => r[C.section] === SECTION_ENC);
+  const badRows = encRows.filter(r => r[C.status] === STATUS_BAD);
+  const guards  = new Set(rows.map(r => r[C.guard]).filter(Boolean));
+  const dayCount = new Set(rows.map(r => r._d).filter(Boolean)).size;
 
-  // หาโซนที่แย่สุด
-  const zoneCounts = {};
-  badRows.forEach(r => { if(r.location) zoneCounts[r.location] = (zoneCounts[r.location]||0)+1; });
-  const worstZone = Object.entries(zoneCounts).sort((a,b)=>b[1]-a[1])[0];
+  const zoneCnt = {};
+  badRows.forEach(r => { if(r[C.location]) zoneCnt[r[C.location]] = (zoneCnt[r[C.location]]||0)+1; });
+  const worst = Object.entries(zoneCnt).sort((a,b)=>b[1]-a[1])[0];
 
-  document.getElementById("main").innerHTML = `
+  document.getElementById('main').innerHTML = `
     <div class="kpi-row">
-      <div class="kpi-card danger">
+      <div class="kpi red">
         <div class="kpi-label">พบการรุกล้ำ</div>
         <div class="kpi-value">${badRows.length}</div>
         <div class="kpi-sub">รายการ</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">ตรวจแล้ว (รุกล้ำ)</div>
+      <div class="kpi">
+        <div class="kpi-label">รอบที่ตรวจ</div>
         <div class="kpi-value">${encRows.length}</div>
-        <div class="kpi-sub">รอบ</div>
+        <div class="kpi-sub">รายการ (หมวดรุกล้ำ)</div>
       </div>
-      <div class="kpi-card teal">
-        <div class="kpi-label">โซนที่มีปัญหามากสุด</div>
-        <div class="kpi-value" style="font-size:14px;padding-top:6px">${worstZone ? worstZone[0] : "-"}</div>
-        <div class="kpi-sub">${worstZone ? worstZone[1]+" ครั้ง" : ""}</div>
+      <div class="kpi green">
+        <div class="kpi-label">โซนปัญหามากสุด</div>
+        ${worst
+          ? `<div class="kpi-value">${worst[0]}</div><div class="kpi-sub">${worst[1]} ครั้ง</div>`
+          : '<div class="kpi-sub" style="padding-top:10px">—</div>'}
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">จำนวนผู้ตรวจ</div>
-        <div class="kpi-value">${allGuards.size}</div>
-        <div class="kpi-sub">คน ใน ${allDates.size} วัน</div>
+      <div class="kpi amber">
+        <div class="kpi-label">ผู้ตรวจ</div>
+        <div class="kpi-value">${guards.size}</div>
+        <div class="kpi-sub">คน / ${dayCount} วัน</div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="card">
+        <div class="card-head">รุกล้ำแต่ละโซน</div>
+        <div class="chart-wrap"><canvas id="chartZone"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          แนวโน้มรายวัน
+          <span class="card-head-note">ทุกวันที่มีข้อมูล</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">🚨 จำนวนรุกล้ำแต่ละโซน</div>
-      <div class="chart-wrap"><canvas id="chartZone"></canvas></div>
+      <div class="card-head">
+        ร้านค้า / จุดที่พบซ้ำ
+        <span class="card-head-note">รวมทุกวัน</span>
+      </div>
+      <div class="tbl-wrap" id="tblRepeat"></div>
     </div>
 
     <div class="card">
-      <div class="card-title">📈 แนวโน้มรายวัน (พบรุกล้ำ)</div>
-      <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">🔁 ร้านค้า/จุดที่พบซ้ำซาก</div>
-      <div class="tbl-wrap" id="tableRepeat"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">👮 สถิติการตรวจของผู้ตรวจ</div>
-      <div class="tbl-wrap" id="tableGuard"></div>
+      <div class="card-head">สถิติผู้ตรวจ</div>
+      <div class="tbl-wrap" id="tblGuard"></div>
     </div>
   `;
 
   renderZoneChart(badRows);
-  renderTrendChart(badRows);
-  renderRepeatTable(badRows);
+  renderTrendChart();
+  renderRepeatTable();
   renderGuardTable(rows);
 }
 
-// ============================================================
-// กราฟ: รุกล้ำแต่ละโซน
-// ============================================================
+// ── Zone chart ────────────────────────────────
 function renderZoneChart(badRows) {
-  const counts = {};
-  badRows.forEach(r => { if(r.location) counts[r.location] = (counts[r.location]||0)+1; });
-  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  const cnt = {};
+  badRows.forEach(r => { if(r[C.location]) cnt[r[C.location]] = (cnt[r[C.location]]||0)+1; });
+  const sorted = Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
 
-  if (sorted.length === 0) {
-    document.querySelector(".chart-wrap").innerHTML = '<div class="empty-msg">ไม่พบข้อมูลรุกล้ำในช่วงที่เลือก</div>';
+  if (!sorted.length) {
+    document.getElementById('chartZone').closest('.chart-wrap').innerHTML =
+      '<div class="msg">ไม่พบข้อมูลรุกล้ำ</div>';
     return;
   }
-
-  const ctx = document.getElementById("chartZone").getContext("2d");
-  charts.zone = new Chart(ctx, {
-    type: "bar",
+  charts.zone = new Chart(document.getElementById('chartZone').getContext('2d'), {
+    type: 'bar',
     data: {
-      labels: sorted.map(e => e[0]),
-      datasets: [{
-        data: sorted.map(e => e[1]),
-        backgroundColor: sorted.map((_, i) => i === 0 ? "#ff3b30" : "#00b4b4cc"),
-        borderRadius: 6,
-        borderSkipped: false
-      }]
+      labels: sorted.map(e=>e[0]),
+      datasets: [{ data: sorted.map(e=>e[1]),
+        backgroundColor: sorted.map((_,i)=>i===0?'#B71C1C':'#2D7A50'),
+        borderRadius: 3, borderSkipped: false }]
     },
     options: {
-      indexAxis: "y",
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: {
-        label: ctx => ` ${ctx.parsed.x} ครั้ง`
-      }}},
-      scales: {
-        x: { ticks: { stepSize: 1, font: {size:12} }, grid: { color: "#f5f5f7" } },
-        y: { ticks: { font: { size: 11 } }, grid: { display: false } }
+      indexAxis: 'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.parsed.x} ครั้ง`}} },
+      scales:{
+        x:{ ticks:{stepSize:1, font:{size:11}}, grid:{color:'#F0EDE7'} },
+        y:{ ticks:{font:{size:11}}, grid:{display:false} }
       }
     }
   });
 }
 
-// ============================================================
-// กราฟ: แนวโน้มรายวัน
-// ============================================================
-function renderTrendChart(badRows) {
-  const counts = {};
-  badRows.forEach(r => { if(r.date) counts[r.date] = (counts[r.date]||0)+1; });
-  const sorted = Object.entries(counts).sort((a,b) => a[0].localeCompare(b[0]));
+// ── Trend chart (all data) ────────────────────
+function renderTrendChart() {
+  const cnt = {};
+  allData.filter(r=>r[C.section]===SECTION_ENC && r[C.status]===STATUS_BAD)
+    .forEach(r=>{ if(r._d) cnt[r._d] = (cnt[r._d]||0)+1; });
+  const sorted = Object.entries(cnt).sort((a,b)=>a[0].localeCompare(b[0]));
 
-  if (sorted.length === 0) return;
-
-  const ctx = document.getElementById("chartTrend").getContext("2d");
-  charts.trend = new Chart(ctx, {
-    type: "line",
+  if (!sorted.length) return;
+  charts.trend = new Chart(document.getElementById('chartTrend').getContext('2d'), {
+    type: 'line',
     data: {
-      labels: sorted.map(e => e[0]),
-      datasets: [{
-        label: "พบรุกล้ำ",
-        data: sorted.map(e => e[1]),
-        borderColor: "#ff3b30",
-        backgroundColor: "rgba(255,59,48,0.08)",
-        tension: 0.35,
-        fill: true,
-        pointRadius: 5,
-        pointBackgroundColor: "#ff3b30",
-        pointBorderColor: "#fff",
-        pointBorderWidth: 2
-      }]
+      labels: sorted.map(e=>displayDate(e[0])),
+      datasets: [{ data: sorted.map(e=>e[1]),
+        borderColor:'#1B5E3B', backgroundColor:'rgba(27,94,59,.08)',
+        tension:.35, fill:true, pointRadius:5,
+        pointBackgroundColor:'#1B5E3B', pointBorderColor:'#fff', pointBorderWidth:2 }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: {
-        label: ctx => ` ${ctx.parsed.y} ครั้ง`
-      }}},
-      scales: {
-        y: { beginAtZero: true, ticks: { stepSize: 1, font:{size:12} }, grid: { color: "#f5f5f7" } },
-        x: { ticks: { font:{size:11} }, grid: { display: false } }
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.parsed.y} ครั้ง`}} },
+      scales:{
+        y:{ beginAtZero:true, ticks:{stepSize:1,font:{size:11}}, grid:{color:'#F0EDE7'} },
+        x:{ ticks:{font:{size:10}}, grid:{display:false} }
       }
     }
   });
 }
 
-// ============================================================
-// ตาราง: ร้านค้าซ้ำซาก (กลุ่มตาม location + note)
-// ============================================================
-function renderRepeatTable(badRows) {
+// ── Repeat table (all data) ───────────────────
+function renderRepeatTable() {
+  const allBad = allData.filter(r=>r[C.section]===SECTION_ENC && r[C.status]===STATUS_BAD);
   const map = {};
-  badRows.forEach(r => {
-    const note = (r.note || "").trim();
+  allBad.forEach(r => {
+    const note = (r[C.note]||'').trim();
     if (!note) return;
-    const key = r.location + "||" + note;
-    if (!map[key]) map[key] = { location: r.location, note, dates: new Set(), encTypes: new Set() };
-    if (r.date) map[key].dates.add(r.date);
-    if (r.encType) map[key].encTypes.add(r.encType);
+    const key = r[C.location]+'||'+note;
+    if (!map[key]) map[key] = { loc:r[C.location], note, dates:new Set() };
+    if (r._d) map[key].dates.add(r._d);
   });
 
-  const sorted = Object.values(map).sort((a,b) => b.dates.size - a.dates.size);
-  const el = document.getElementById("tableRepeat");
-
-  if (sorted.length === 0) {
-    el.innerHTML = '<div class="empty-msg">ไม่มีข้อมูล — กรอกหมายเหตุ (ชื่อร้าน/หมายเลขแผง) ในแอปตรวจเพื่อติดตามซ้ำ</div>';
+  const sorted = Object.values(map).sort((a,b)=>b.dates.size-a.dates.size);
+  const el = document.getElementById('tblRepeat');
+  if (!sorted.length) {
+    el.innerHTML = '<div class="msg">ไม่มีข้อมูล — กรอกชื่อร้านในช่องหมายเหตุในแอปตรวจ</div>';
     return;
   }
-
   el.innerHTML = `<table>
-    <tr>
-      <th>โซน</th>
-      <th>หมายเหตุ / ร้านค้า</th>
-      <th>ประเภทรุกล้ำ</th>
-      <th>พบ</th>
-    </tr>
-    ${sorted.map(v => `<tr>
-      <td style="font-size:12px;color:#86868b">${v.location}</td>
-      <td>${v.note}</td>
-      <td style="font-size:11px;color:#86868b">${[...v.encTypes].join("<br>") || "-"}</td>
-      <td>
-        <span class="badge ${v.dates.size >= 3 ? 'badge-red' : v.dates.size >= 2 ? 'badge-orange' : 'badge-gray'}">
-          ${v.dates.size} วัน
-        </span>
-      </td>
-    </tr>`).join("")}
+    <thead><tr><th>โซน</th><th>ร้านค้า / หมายเหตุ</th><th>พบกี่วัน</th></tr></thead>
+    <tbody>${sorted.map(v=>`<tr>
+      <td style="color:var(--sub);font-size:12px">${v.loc}</td>
+      <td><strong>${v.note}</strong></td>
+      <td><span class="tag ${v.dates.size>=3?'tag-red':v.dates.size>=2?'tag-amber':'tag-gray'}">${v.dates.size} วัน</span></td>
+    </tr>`).join('')}</tbody>
   </table>`;
 }
 
-// ============================================================
-// ตาราง: สถิติผู้ตรวจ
-// ============================================================
+// ── Guard table ───────────────────────────────
 function renderGuardTable(rows) {
   const stats = {};
   rows.forEach(r => {
-    const g = (r.guardName || "").trim();
+    const g = (r[C.guard]||'').trim();
     if (!g) return;
-    if (!stats[g]) stats[g] = { name: g, total: 0, dates: new Set(), problems: 0 };
+    if (!stats[g]) stats[g] = { name:g, total:0, dates:new Set(), problems:0 };
     stats[g].total++;
-    if (r.date) stats[g].dates.add(r.date);
-    if (["พบการรุกล้ำ","ไม่ผ่าน","ผิดปกติ"].includes(r.status)) stats[g].problems++;
+    if (r._d) stats[g].dates.add(r._d);
+    if ([STATUS_BAD,'ไม่ผ่าน','ผิดปกติ'].includes(r[C.status])) stats[g].problems++;
   });
-
-  const sorted = Object.values(stats).sort((a,b) => b.total - a.total);
-  const el = document.getElementById("tableGuard");
-
-  if (sorted.length === 0) {
-    el.innerHTML = '<div class="empty-msg">ไม่มีข้อมูล</div>';
-    return;
-  }
-
+  const sorted = Object.values(stats).sort((a,b)=>b.total-a.total);
+  const el = document.getElementById('tblGuard');
+  if (!sorted.length) { el.innerHTML='<div class="msg">ไม่มีข้อมูล</div>'; return; }
   el.innerHTML = `<table>
-    <tr>
-      <th>ชื่อผู้ตรวจ</th>
-      <th>รายการตรวจ</th>
-      <th>วันที่ตรวจ</th>
-      <th>พบปัญหา</th>
-    </tr>
-    ${sorted.map(v => `<tr>
-      <td><strong>${v.name}</strong></td>
+    <thead><tr><th>ชื่อผู้ตรวจ</th><th>รายการตรวจ</th><th>วันที่ตรวจ</th><th>พบปัญหา</th></tr></thead>
+    <tbody>${sorted.map(v=>`<tr>
+      <td>${v.name}</td>
       <td>${v.total} รายการ</td>
-      <td>
-        <span class="badge badge-teal">${v.dates.size} วัน</span>
-      </td>
-      <td>
-        <span class="badge ${v.problems > 0 ? 'badge-red' : 'badge-green'}">${v.problems}</span>
-      </td>
-    </tr>`).join("")}
+      <td><span class="tag tag-green">${v.dates.size} วัน</span></td>
+      <td><span class="tag ${v.problems>0?'tag-red':'tag-gray'}">${v.problems}</span></td>
+    </tr>`).join('')}</tbody>
   </table>`;
 }
 
-// ============================================================
-// เริ่มต้น
-// ============================================================
 loadData();
 </script>
 </body>
 </html>
-
