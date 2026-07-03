@@ -96,8 +96,9 @@ function doGet(e) {
       if (extSheet) {
         const lastRow = extSheet.getLastRow();
         if (lastRow >= 2) {
-          shops = extSheet.getRange(2, 19, lastRow - 1, 1).getValues()
-            .map(r => String(r[0]).trim())
+          shops = extSheet.getRange(2, 11, lastRow - 1, 9).getValues() // K ถึง S
+            .filter(r => String(r[0]).trim() === 'Active')              // กรองเฉพาะ K = "Active"
+            .map(r => String(r[8]).trim())                              // ชื่อร้านจาก S
             .filter(v => v !== "");
           shops = [...new Set(shops)].sort((a, b) => a.localeCompare(b, 'th'));
         }

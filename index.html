@@ -728,6 +728,10 @@ function renderTab1(){
         input.placeholder = "ระบุหรือเลือกชื่อร้านค้า";
         input.value = cell.note;
         input.oninput = (e)=>{ cell.note = e.target.value; saveState(); };
+        input.onfocus = ()=>{
+          // มือถือ: เลื่อน input ขึ้นด้านบนให้ dropdown มีที่แสดงโดยไม่บังช่องอื่น
+          setTimeout(()=>{ input.scrollIntoView({behavior:'smooth', block:'start'}); }, 350);
+        };
         box.appendChild(input);
 
         const photoRow = document.createElement("div");
