@@ -29,7 +29,9 @@
   .field select{width:100%; border:none; border-radius:10px; padding:10px 11px; font-size:14px; background:rgba(255,255,255,.14); color:#fff; font-family:inherit; appearance:none; -webkit-appearance:none;}
   .field select option{color:#1d1d1f;}
 
-  .date-display{font-size:12px; color:rgba(255,255,255,.7); margin-top:10px;}
+  .date-display{font-size:12px; color:rgba(255,255,255,.7); margin-top:10px; display:flex; align-items:center; justify-content:space-between;}
+  .btn-refresh-shops{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:20px; padding:3px 12px; font-size:11px; font-family:inherit; cursor:pointer; white-space:nowrap;}
+  .btn-refresh-shops:active{background:rgba(255,255,255,.3);}
 
   .tabs{
     display:flex; gap:4px; background:var(--track); border-radius:12px; padding:4px;
@@ -142,7 +144,10 @@
       </select>
     </div>
   </div>
-  <div class="date-display" id="dateLabel"></div>
+  <div class="date-display">
+    <span id="dateLabel"></span>
+    <button class="btn-refresh-shops" onclick="refreshShopNames()">↺ อัปเดตรายชื่อร้าน</button>
+  </div>
 </header>
 
 <div class="tabs">
@@ -342,6 +347,23 @@ async function loadShopNames(){
       try{ localStorage.setItem(SHOP_LIST_KEY, JSON.stringify(data.shops)); }catch(e){}
     }
   }catch(err){ /* ใช้ cache ที่มีอยู่ */ }
+}
+async function refreshShopNames(){
+  showToast("กำลังอัปเดตรายชื่อร้าน...");
+  try{ localStorage.removeItem(SHOP_LIST_KEY); }catch(e){}
+  try{
+    const res = await fetch(SHEET_URL + "?action=shops&t=" + Date.now()); // bypass cache
+    const data = await res.json();
+    if(data && Array.isArray(data.shops) && data.shops.length){
+      populateShopDatalist(data.shops);
+      try{ localStorage.setItem(SHOP_LIST_KEY, JSON.stringify(data.shops)); }catch(e){}
+      showToast("อัปเดตแล้ว " + data.shops.length + " ร้าน");
+    } else {
+      showToast("ไม่พบข้อมูลร้านค้า ตรวจสอบอินเทอร์เน็ต");
+    }
+  }catch(err){
+    showToast("อัปเดตไม่ได้ ตรวจสอบอินเทอร์เน็ต");
+  }
 }
 
 function populateShopDatalist(shops){
