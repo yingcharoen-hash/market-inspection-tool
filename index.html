@@ -159,7 +159,7 @@
       <h3>วัตถุประสงค์</h3>
       <p>เพื่อให้ลูกค้าที่เข้ามาใช้บริการเดินได้อย่างสะดวก (พื้นที่ทางเดินทุกส่วนต้องมีทางเดิน)</p>
       <details>
-        <summary>วิธีตรวจ & หลักเกณฑ์สีธง/ป้าย</summary>
+        <summary>วิธีตรวจ &amp; หลักเกณฑ์สีธง/ป้าย</summary>
         <ul>
           <li>ถ่ายรูปชื่อร้านค้าที่รุกล้ำ</li>
           <li>ถ่ายภาพสถานที่/จุดที่รุกล้ำ</li>
@@ -207,7 +207,7 @@
 
     <div class="card zone-note">
       <label>หมายเหตุรวมของโซนนี้</label>
-      <textarea id="zoneNote2" placeholder="บันทึกสิ่งที่พบเพิ่มเติม..."></textarea>
+      <textarea id="zoneNote2" placeholder="บันทึกเพิ่มเติม..."></textarea>
     </div>
 
     <div class="actions">
@@ -234,7 +234,7 @@
 
     <div class="card zone-note">
       <label>หมายเหตุรวมของโซนนี้</label>
-      <textarea id="zoneNote3" placeholder="บันทึกสิ่งที่พบเพิ่มเติม..."></textarea>
+      <textarea id="zoneNote3" placeholder="บันทึกเพิ่มเติม..."></textarea>
     </div>
 
     <div class="actions">
@@ -246,6 +246,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<datalist id="shopList"></datalist>
 
 <script>
 /* ========================= CONFIG ========================= */
@@ -294,6 +295,7 @@ const ITEMS3 = [
 const STORAGE_KEY = "marketInspectionState";
 const GUARD_KEY = "marketInspectionGuardName";
 const GUARD_LIST_KEY = "marketInspectionGuardList";
+const SHOP_LIST_KEY  = "marketInspectionShopList";
 let state = loadState();
 
 function todayStr(){
@@ -326,6 +328,30 @@ function populateGuardSelect(names){
     sel.appendChild(opt);
   });
   setGuardSelectValue();
+}
+
+async function loadShopNames(){
+  let cached = [];
+  try{ cached = JSON.parse(localStorage.getItem(SHOP_LIST_KEY) || "[]"); }catch(e){}
+  populateShopDatalist(cached);
+  try{
+    const res = await fetch(SHEET_URL + "?action=shops");
+    const data = await res.json();
+    if(data && Array.isArray(data.shops) && data.shops.length){
+      populateShopDatalist(data.shops);
+      try{ localStorage.setItem(SHOP_LIST_KEY, JSON.stringify(data.shops)); }catch(e){}
+    }
+  }catch(err){ /* ใช้ cache ที่มีอยู่ */ }
+}
+
+function populateShopDatalist(shops){
+  const dl = document.getElementById("shopList");
+  dl.innerHTML = "";
+  shops.forEach(name=>{
+    const opt = document.createElement("option");
+    opt.value = name;
+    dl.appendChild(opt);
+  });
 }
 
 async function loadGuardNames(){
@@ -412,6 +438,7 @@ function getItems2ForZone(zone){
 /* ========================= INIT ========================= */
 updateDateLabel();
 loadGuardNames();
+loadShopNames();
 
 document.getElementById("guardName").addEventListener("change", (e)=>{
   state.guardName = e.target.value;
@@ -697,7 +724,8 @@ function renderTab1(){
         box.appendChild(shopLabel);
         const input = document.createElement("input");
         input.type = "text";
-        input.placeholder = "ระบุชื่อร้านค้า / จุดที่รุกล้ำ";
+        input.setAttribute("list", "shopList");
+        input.placeholder = "ระบุหรือเลือกชื่อร้านค้า";
         input.value = cell.note;
         input.oninput = (e)=>{ cell.note = e.target.value; saveState(); };
         box.appendChild(input);
@@ -912,6 +940,7 @@ function resetTab(tab){
   renderAll();
   showToast("ล้างข้อมูลเรียบร้อย");
 }
+
 function showToast(msg){
   const t = document.getElementById("toast");
   t.textContent = msg;
