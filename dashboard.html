@@ -185,6 +185,18 @@
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3N1gxp9Gf94x-dXNbqgzUpirfQuy44YO6-rgcnS_OTVdAzp5Nw10cigkCcoy_uNlu/exec";
 
+// โซนและรอบเวลาคงที่ — ต้องตรงกับ ZONES1 และ ROUNDS ใน index.html
+const KNOWN_ZONES  = [
+  "อาคารยาว ปลาน้ำจืด-ปลาทะเล",
+  "อาคารยาว ท้ายเพชร",
+  "อาคารกลาง",
+  "พลาซ่า + ฟู้ดพลาซ่า + อาคารจงรักษ์",
+  "โซนอาคารผัก 2",
+  "โซนอาคาร 60 ปี",
+  "โซนเทคโฮม"
+];
+const KNOWN_ROUNDS = ["08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00","00:00","03:00","06:00"];
+
 const C = {
   date:     'วันที่',
   guard:    'ผู้ตรวจ',
@@ -507,10 +519,8 @@ function renderHeatmap(rows) {
   const encRows = rows.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
   const el = document.getElementById('heatmapWrap');
 
-  // Collect zones & rounds from ALL data (ไม่กรองวัน เพื่อให้แกน X/Y ครบทุกวัน)
-  const allEnc = allData.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
-  const zones  = [...new Set(allEnc.map(r => r[C.location]).filter(Boolean))];
-  const rounds = [...new Set(allEnc.map(r => itemTime(r[C.item])).filter(t => t !== '—'))].sort();
+  const zones  = KNOWN_ZONES;
+  const rounds = KNOWN_ROUNDS;
 
   if (!zones.length || !rounds.length) {
     el.innerHTML = '<div class="msg">ไม่มีข้อมูลหมวดรุกล้ำ</div>'; return;
@@ -568,8 +578,7 @@ function renderRoundCompletion(rows) {
   const encRows = rows.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
   const el = document.getElementById('roundCompletion');
 
-  const allEnc = allData.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
-  const rounds  = [...new Set(allEnc.map(r => itemTime(r[C.item])).filter(t => t !== '—'))].sort();
+  const rounds  = KNOWN_ROUNDS;
   const guards  = [...new Set(encRows.map(r => r[C.guard]).filter(Boolean))].sort();
 
   if (!guards.length || !rounds.length) {
