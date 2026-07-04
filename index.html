@@ -556,7 +556,9 @@ function buildSheetRows(){
   return rows;
 }
 
+let _sending = false;
 async function sendToGoogleSheet(){
+  if(_sending){ showToast("กำลังส่งอยู่ กรุณารอสักครู่..."); return; }
   if(!state.guardName || !state.guardName.trim()){
     showToast("กรุณาเลือกชื่อผู้ตรวจก่อนส่งข้อมูล");
     document.getElementById("guardName").focus();
@@ -571,6 +573,9 @@ async function sendToGoogleSheet(){
     showToast("ไม่มีสัญญาณ — ข้อมูลเซฟไว้แล้ว กดส่งอีกครั้งเมื่อมีอินเตอร์เน็ต");
     return;
   }
+  // ป้องกันกดซ้ำ: disable ปุ่มทุกปุ่มบันทึก
+  _sending = true;
+  document.querySelectorAll('.btn-primary').forEach(b=>{ b.disabled=true; b.style.opacity='.5'; });
   showToast("กำลังส่งข้อมูล " + rows.length + " รายการ...");
   try{
     await fetch(SHEET_URL, {
@@ -580,13 +585,17 @@ async function sendToGoogleSheet(){
       body: JSON.stringify({rows: rows})
     });
     showToast("ส่งข้อมูล " + rows.length + " รายการแล้ว — ตรวจสอบใน Google Sheet");
-    state.tab1 = ZONES1.map(()=> ROUNDS.map(()=>({status:0, encType:"", note:"", photos:{shop:null, spot:null}})));
+    state.tab1 = ZONES1.map(()=> ROUNDS.map(()=>({status:0, encType:"", note:"", photos:{shop:null, spot:null, pass:null}})));
     state.tab2 = {};
     state.tab3 = {};
     saveState();
     renderAll();
   }catch(err){
     showToast("ส่งไม่ผ่าน — ข้อมูลยังอยู่ครบ ลองกดส่งอีกครั้ง");
+  }finally{
+    // คืนสถานะปุ่มเสมอ ไม่ว่าจะสำเร็จหรือไม่
+    _sending = false;
+    document.querySelectorAll('.btn-primary').forEach(b=>{ b.disabled=false; b.style.opacity=''; });
   }
 }
 
