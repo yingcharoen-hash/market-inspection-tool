@@ -199,6 +199,26 @@ const KNOWN_ZONES  = [
 ];
 const KNOWN_ROUNDS = ["00:00","03:00","06:00","08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00"];
 
+const KNOWN_ZONES2 = ["โซนอาคารกลาง","โซนอาคารผัก2","โซนอาคาร60ปี","โซนอาคาร800ตรม.","โซนอาคารยาว","take home","โซนฟู้ดพลาซ่า","โซนครัวยิ่งเจริญ"];
+const KNOWN_ITEMS2 = [
+  {full:"ตรวจความสะอาดแผง", short:"แผง"},
+  {full:"ตรวจป้ายชื่อร้านสะอาดไหม (ไม่สกปรก)", short:"ป้ายชื่อ"},
+  {full:"ตรวจความสะอาดพัดลม (ไม่มีคราบสกปรก/หยากไย่)", short:"พัดลม"},
+  {full:"ตรวจความสะอาดโคมไฟ/หลอดไฟ (ไม่สกปรก ไม่มีหยากไย่)", short:"โคมไฟ"},
+  {full:"ตรวจความสะอาดร่องน้ำ (ไม่มีเศษอาหาร/ขยะ/คราบ)", short:"ร่องน้ำ"},
+  {full:"ตรวจความสะอาดใต้แผง (ไม่สกปรก ไม่มียุง)", short:"ใต้แผง"},
+  {full:"ตรวจถังดักไขมัน (สะอาด ไม่มีคราบไขมัน)", short:"ถังดักไขมัน"},
+  {full:"ตรวจเครื่องดูดควัน (สะอาด ไม่มีคราบสกปรก)", short:"เครื่องดูดควัน"},
+  {full:"ตรวจป้ายราคาชัดเจน", short:"ป้ายราคา"}
+];
+
+const KNOWN_ZONES3 = ["โซนอาคารกลาง","โซนอาคารผัก2","โซนอาคาร60ปี","โซนอาคาร800ตรม.","โซนอาคารยาว","take home","โซนฟู้ดพลาซ่า","โซนครัวยิ่งเจริญ","โซนอาคารจงรักษ์","โซนพลาซ่า","โซนพลาซ่า2","โซนชุมเรือนไทย(ลอตเตอรี่)"];
+const KNOWN_ITEMS3 = [
+  {full:"ตรวจชื่อร้านตรงกับชื่อในบัตรหรือไม่", short:"ชื่อตรงบัตร"},
+  {full:"ตรวจว่ามีบัตรใหม่หรือไม่", short:"บัตรใหม่"},
+  {full:"ตรวจรูปถ่ายในบัตรตรงกับผู้ถือบัตรหรือไม่", short:"รูปตรงบัตร"}
+];
+
 const C = {
   date:     'วันที่',
   guard:    'ผู้ตรวจ',
@@ -215,7 +235,7 @@ const C = {
 // "พบปัญหา/ไม่ผ่าน" across all sections
 function isProblem(r) {
   const s = r[C.status] || '';
-  return s === 'พบการรุกล้ำ' || s === 'ไม่ผ่าน' || (s.startsWith('พบ') && s !== 'พบ');
+  return s === 'พบการรุกล้ำ' || s === 'ไม่ผ่าน' || s === 'ผิดปกติ' || (s.startsWith('พบ') && s !== 'พบ');
 }
 
 const SECTIONS = [
@@ -346,6 +366,18 @@ function render() {
   const guards    = new Set(rows.map(r=>r[C.guard]).filter(Boolean));
   const dayCount  = new Set(rows.map(r=>r._d).filter(Boolean)).size;
   const secFilter = document.getElementById('sectionFilter').value;
+  const isEnc   = !secFilter || secFilter === '1. ตรวจรุกล้ำ';
+  const isClean = secFilter === '2. ตรวจความสะอาด';
+  const isCard3 = secFilter === '3. ตรวจบัตรสมาชิก';
+  const hmTitle     = isClean ? 'รูปแบบตามโซนและรายการ (ความสะอาด)'
+                    : isCard3 ? 'รูปแบบตามโซนและรายการ (บัตรสมาชิก)'
+                    : 'รูปแบบการรุกล้ำตามช่วงเวลา';
+  const roundTitle  = isClean ? 'โซนที่ รปภ. ตรวจ (ความสะอาด)'
+                    : isCard3 ? 'โซนที่ รปภ. ตรวจ (บัตรสมาชิก)'
+                    : 'รอบที่ รปภ. ตรวจ (รุกล้ำ)';
+  const repeatTitle = isClean ? 'จุดที่ไม่ผ่านซ้ำ (ความสะอาด)'
+                    : isCard3 ? 'จุดที่ผิดปกติซ้ำ (บัตรสมาชิก)'
+                    : 'ร้านค้า / จุดที่พบซ้ำ (รุกล้ำ)';
 
   const zoneCnt = {};
   badRows.forEach(r=>{ if(r[C.location]) zoneCnt[r[C.location]]=(zoneCnt[r[C.location]]||0)+1; });
@@ -419,18 +451,18 @@ function render() {
     </div>
 
     <div class="card">
-      <div class="card-head">รูปแบบการรุกล้ำตามช่วงเวลา <span class="card-head-note">— คลิกช่องเพื่อดูรายละเอียด</span></div>
+      <div class="card-head">${hmTitle} <span class="card-head-note">— คลิกช่องเพื่อดูรายละเอียด</span></div>
       <div id="heatmapWrap"></div>
     </div>
 
     <div class="card">
-      <div class="card-head">รอบที่ รปภ. ตรวจ (รุกล้ำ) <span class="card-head-note">✓ = ส่งข้อมูลแล้ว</span></div>
+      <div class="card-head">${roundTitle} <span class="card-head-note">✓ = ส่งข้อมูลแล้ว</span></div>
       <div id="roundCompletion"></div>
     </div>
 
     <div class="card">
       <div class="card-head">
-        ร้านค้า / จุดที่พบซ้ำ (รุกล้ำ)
+        ${repeatTitle}
         <span class="card-head-note">รวมทุกวัน — คลิกแถวเพื่อดูรายละเอียด</span>
       </div>
       <div class="tbl-wrap" id="tblRepeat"></div>
@@ -516,19 +548,25 @@ function showSectionDetail(secKey, secLabel) {
   openModal(secLabel, `${sRows.length} รายการ`, sRows);
 }
 
-// ── Heatmap: zone × round ─────────────────────
+// ── Heatmap: section-aware dispatcher ────────
 function renderHeatmap(rows) {
-  const encRows = rows.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
+  const secFilter = document.getElementById('sectionFilter').value;
   const el = document.getElementById('heatmapWrap');
+  if (!secFilter || secFilter === '1. ตรวจรุกล้ำ') {
+    renderHeatmapEnc(rows, el);
+  } else if (secFilter === '2. ตรวจความสะอาด') {
+    renderHeatmapItems(rows, el, '2. ตรวจความสะอาด', KNOWN_ZONES2, KNOWN_ITEMS2, 'ไม่ผ่าน', 'ผ่าน', 'ไม่ผ่าน');
+  } else {
+    renderHeatmapItems(rows, el, '3. ตรวจบัตรสมาชิก', KNOWN_ZONES3, KNOWN_ITEMS3, 'ผิดปกติ', 'ปกติ', 'ผิดปกติ');
+  }
+}
 
+// ── Heatmap: zone × round (encroachment) ─────
+function renderHeatmapEnc(rows, el) {
+  const encRows = rows.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
   const zones  = KNOWN_ZONES;
   const rounds = KNOWN_ROUNDS;
 
-  if (!zones.length || !rounds.length) {
-    el.innerHTML = '<div class="msg">ไม่มีข้อมูลหมวดรุกล้ำ</div>'; return;
-  }
-
-  // Build lookup จากข้อมูลที่ filter อยู่
   const lookup = {};
   encRows.forEach(r => {
     const t = itemTime(r[C.item]); const z = r[C.location];
@@ -575,17 +613,84 @@ function openHmDetail(key) {
   openModal(`${zone} — รอบ ${time}`, `${rows.length} รายการ`, rows);
 }
 
-// ── Round completion: guard × round ───────────
-function renderRoundCompletion(rows) {
-  const encRows = rows.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
-  const el = document.getElementById('roundCompletion');
+// ── Heatmap: zone × item (ความสะอาด / บัตรสมาชิก) ──
+function renderHeatmapItems(rows, el, secKey, knownZones, knownItems, badStatus, okLabel, badLabel) {
+  const secRows = rows.filter(r => r[C.section] === secKey && r[C.item] !== 'หมายเหตุรวมโซน');
+  if (!secRows.length) { el.innerHTML = '<div class="msg">ไม่มีข้อมูลในหมวดนี้</div>'; return; }
 
+  // Build lookup: "zone|||item" → rows[]
+  window._hmCells = [];
+  const lookup = {};
+  secRows.forEach(r => {
+    const z = r[C.location]; const it = r[C.item];
+    if (!z || !it) return;
+    const k = z + '|||' + it;
+    if (!lookup[k]) lookup[k] = [];
+    lookup[k].push(r);
+  });
+
+  // Only show zones that appear in actual data (in KNOWN order)
+  const activeZones = knownZones.filter(z => secRows.some(r => r[C.location] === z));
+  if (!activeZones.length) { el.innerHTML = '<div class="msg">ไม่มีข้อมูลในหมวดนี้</div>'; return; }
+
+  let html = `<div class="heatmap-wrap"><table class="heatmap-table">
+    <thead><tr><th></th>${knownItems.map(it => `<th title="${it.full}">${it.short}</th>`).join('')}</tr></thead>
+    <tbody>`;
+
+  activeZones.forEach(zone => {
+    html += `<tr><td class="zone-label">${zone}</td>`;
+    knownItems.forEach(it => {
+      const k = zone + '|||' + it.full;
+      const cells = lookup[k] || [];
+      let cls = 'no-data', title = 'ไม่มีข้อมูล', onclick = '';
+      if (cells.length) {
+        const hasBad = cells.some(r => r[C.status] === badStatus);
+        cls = hasBad ? 'bad' : 'ok';
+        title = hasBad ? badLabel : okLabel;
+        const idx = window._hmCells.length;
+        window._hmCells.push({label: `${zone} — ${it.short}`, rows: cells});
+        onclick = `onclick="openHmDetailIdx(${idx})"`;
+      }
+      html += `<td><div class="hm-cell ${cls}" title="${title}" ${onclick}></div></td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += `</tbody></table>
+    <div class="hm-legend">
+      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#F0EDE7"></span>ไม่มีข้อมูล</div>
+      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#81C784"></span>${okLabel}</div>
+      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#EF5350"></span>${badLabel}</div>
+    </div></div>`;
+
+  el.innerHTML = html;
+}
+function openHmDetailIdx(idx) {
+  const entry = (window._hmCells || [])[idx];
+  if (!entry) return;
+  openModal(entry.label, `${entry.rows.length} รายการ`, entry.rows.slice().sort((a,b)=>(a[C.guard]||'').localeCompare(b[C.guard]||'')));
+}
+
+// ── Round completion: section-aware dispatcher ─
+function renderRoundCompletion(rows) {
+  const secFilter = document.getElementById('sectionFilter').value;
+  const el = document.getElementById('roundCompletion');
+  if (!secFilter || secFilter === '1. ตรวจรุกล้ำ') {
+    renderRoundCompletionEnc(rows, el);
+  } else if (secFilter === '2. ตรวจความสะอาด') {
+    renderRoundCompletionByZone(rows, el, '2. ตรวจความสะอาด', KNOWN_ZONES2);
+  } else {
+    renderRoundCompletionByZone(rows, el, '3. ตรวจบัตรสมาชิก', KNOWN_ZONES3);
+  }
+}
+
+// ── Round completion: guard × round (รุกล้ำ) ──
+function renderRoundCompletionEnc(rows, el) {
+  const encRows = rows.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
   const rounds  = KNOWN_ROUNDS;
   const guards  = [...new Set(encRows.map(r => r[C.guard]).filter(Boolean))].sort();
 
-  if (!guards.length || !rounds.length) {
-    el.innerHTML = '<div class="msg">ไม่มีข้อมูล</div>'; return;
-  }
+  if (!guards.length) { el.innerHTML = '<div class="msg">ไม่มีข้อมูล</div>'; return; }
 
   const guardRounds = {};
   encRows.forEach(r => {
@@ -615,14 +720,65 @@ function renderRoundCompletion(rows) {
   el.innerHTML = html;
 }
 
-// ── Repeat table (encroachment only) ─────────
+// ── Round completion: guard × zone (ความสะอาด / บัตรสมาชิก) ──
+function renderRoundCompletionByZone(rows, el, secKey, knownZones) {
+  const secRows = rows.filter(r => r[C.section] === secKey && r[C.item] !== 'หมายเหตุรวมโซน');
+  if (!secRows.length) { el.innerHTML = '<div class="msg">ไม่มีข้อมูล</div>'; return; }
+
+  const guards = [...new Set(secRows.map(r => r[C.guard]).filter(Boolean))].sort();
+  const zones  = knownZones.filter(z => secRows.some(r => r[C.location] === z));
+
+  const guardZones = {};
+  secRows.forEach(r => {
+    const g = r[C.guard]; const z = r[C.location];
+    if (!g || !z) return;
+    if (!guardZones[g]) guardZones[g] = new Set();
+    guardZones[g].add(z);
+  });
+
+  // Shorten zone label for header (remove โซน prefix)
+  const shortZone = z => z.replace(/^โซน/, '');
+
+  let html = `<div class="heatmap-wrap"><table class="round-table">
+    <thead><tr><th style="text-align:left">รปภ.</th>${zones.map(z=>`<th title="${z}">${shortZone(z)}</th>`).join('')}<th>รวม</th></tr></thead>
+    <tbody>`;
+
+  guards.forEach(guard => {
+    const done = guardZones[guard] || new Set();
+    const count = zones.filter(z => done.has(z)).length;
+    const pct = Math.round(count / zones.length * 100);
+    const tagCls = pct === 100 ? 'tag-green' : pct >= 50 ? 'tag-amber' : 'tag-red';
+    html += `<tr><td class="guard-name">${guard}</td>`;
+    zones.forEach(z => {
+      html += `<td><div class="round-cell ${done.has(z) ? 'done' : 'miss'}">${done.has(z) ? '✓' : ''}</div></td>`;
+    });
+    html += `<td><span class="tag ${tagCls}">${count}/${zones.length}</span></td></tr>`;
+  });
+
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+// ── Repeat table: section-aware ───────────────
 function renderRepeatTable() {
+  const secFilter = document.getElementById('sectionFilter').value;
+  if (secFilter === '2. ตรวจความสะอาด') {
+    renderRepeatTableItems('2. ตรวจความสะอาด', 'ไม่ผ่าน', 'รายการ');
+  } else if (secFilter === '3. ตรวจบัตรสมาชิก') {
+    renderRepeatTableItems('3. ตรวจบัตรสมาชิก', 'ผิดปกติ', 'รายการ');
+  } else {
+    renderRepeatTableEnc();
+  }
+}
+
+// Repeat table: encroachment (by shop note)
+function renderRepeatTableEnc() {
   const encBad = allData.filter(r=>r[C.section]==='1. ตรวจรุกล้ำ'&&r[C.status]==='พบการรุกล้ำ');
   const map = {};
   encBad.forEach(r=>{
     const note=(r[C.note]||'').trim(); if(!note) return;
     const key=r[C.location]+'||'+note;
-    if(!map[key]) map[key]={loc:r[C.location],note,dates:new Set(),rows:[]};
+    if(!map[key]) map[key]={loc:r[C.location],label:note,dates:new Set(),rows:[]};
     map[key].dates.add(r._d); map[key].rows.push(r);
   });
   const sorted=Object.values(map).sort((a,b)=>b.dates.size-a.dates.size);
@@ -630,17 +786,41 @@ function renderRepeatTable() {
   if(!sorted.length){ el.innerHTML='<div class="msg">ไม่มีข้อมูล — กรอกชื่อร้านในช่องหมายเหตุในแอปตรวจ</div>'; return; }
   el.innerHTML=`<table>
     <thead><tr><th>โซน</th><th>ร้านค้า / หมายเหตุ</th><th>พบกี่วัน</th></tr></thead>
-    <tbody>${sorted.map((v,i)=>`<tr class="clickable" onclick="showShopDetail(${i})">
+    <tbody>${sorted.map((v,i)=>`<tr class="clickable" onclick="showRepeatDetail(${i})">
       <td style="color:var(--sub);font-size:12px">${v.loc}</td>
-      <td><strong>${v.note}</strong></td>
+      <td><strong>${v.label}</strong></td>
       <td><span class="tag ${v.dates.size>=3?'tag-red':v.dates.size>=2?'tag-amber':'tag-gray'}">${v.dates.size} วัน</span></td>
     </tr>`).join('')}</tbody>
   </table>`;
   window._repeatData=sorted;
 }
-function showShopDetail(idx){
+
+// Repeat table: ความสะอาด / บัตรสมาชิก (by zone+item)
+function renderRepeatTableItems(secKey, badStatus, colLabel) {
+  const bad = allData.filter(r=>r[C.section]===secKey&&r[C.status]===badStatus);
+  const map = {};
+  bad.forEach(r=>{
+    const key=r[C.location]+'||'+r[C.item];
+    if(!map[key]) map[key]={loc:r[C.location],label:r[C.item],dates:new Set(),rows:[]};
+    map[key].dates.add(r._d); map[key].rows.push(r);
+  });
+  const sorted=Object.values(map).sort((a,b)=>b.dates.size-a.dates.size||b.rows.length-a.rows.length);
+  const el=document.getElementById('tblRepeat');
+  if(!sorted.length){ el.innerHTML='<div class="msg">ไม่พบรายการที่มีปัญหา</div>'; return; }
+  el.innerHTML=`<table>
+    <thead><tr><th>โซน</th><th>${colLabel}</th><th>พบกี่วัน</th></tr></thead>
+    <tbody>${sorted.map((v,i)=>`<tr class="clickable" onclick="showRepeatDetail(${i})">
+      <td style="color:var(--sub);font-size:12px">${v.loc}</td>
+      <td><strong>${v.label}</strong></td>
+      <td><span class="tag ${v.dates.size>=3?'tag-red':v.dates.size>=2?'tag-amber':'tag-gray'}">${v.dates.size} วัน</span></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+  window._repeatData=sorted;
+}
+
+function showRepeatDetail(idx){
   const v=window._repeatData[idx]; if(!v) return;
-  openModal(v.note, `${v.loc} — พบ ${v.dates.size} วัน / ${v.rows.length} รายการ`,
+  openModal(v.label, `${v.loc} — พบ ${v.dates.size} วัน / ${v.rows.length} รายการ`,
     v.rows.sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||'')));
 }
 
