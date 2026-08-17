@@ -226,6 +226,7 @@ const C = {
   location: 'สถานที่/โซน',
   item:     'รายการ',
   status:   'ผลตรวจ',
+  encType:  'ประเภทการรุกล้ำ',
   note:     'หมายเหตุ',
   photo1:   'รูปภาพ1',
   photo2:   'รูปภาพ2',
@@ -295,12 +296,13 @@ function openModal(title, sub, rows) {
     document.getElementById('modalBody').innerHTML = '<div class="msg">ไม่มีข้อมูล</div>';
   } else {
     document.getElementById('modalBody').innerHTML = `<table>
-      <thead><tr><th>วันที่</th><th>เวลา</th><th>ผู้ตรวจ</th><th>หมวด</th><th>รายการ</th><th>ผลตรวจ</th><th>หมายเหตุ</th><th>รูป</th></tr></thead>
+      <thead><tr><th>วันที่</th><th>เวลา</th><th>ผู้ตรวจ</th><th>หมวด</th><th>รายการ</th><th>ผลตรวจ</th><th>ประเภท</th><th>หมายเหตุ</th><th>รูป</th></tr></thead>
       <tbody>${rows.map(r => {
         const photos = [r[C.photo1],r[C.photo2]].filter(Boolean);
         const photoHtml = photos.map((p,i)=>`<a href="${p}" target="_blank" class="photo-link">รูป${i+1}</a>`).join('');
         const bad = isProblem(r);
         const statusTag = `<span class="tag ${bad?'tag-red':'tag-gray'}">${r[C.status]||'—'}</span>`;
+        const encTag = r[C.encType] ? `<span class="tag tag-amber" style="font-size:10px">${r[C.encType]}</span>` : '—';
         return `<tr>
           <td style="white-space:nowrap">${displayDate(r._d)}</td>
           <td style="white-space:nowrap;color:var(--sub)">${tsTime(r[C.timestamp]) !== '—' ? tsTime(r[C.timestamp]) : itemTime(r[C.item])}</td>
@@ -308,6 +310,7 @@ function openModal(title, sub, rows) {
           <td style="white-space:nowrap;color:var(--sub)">${(r[C.section]||'').replace(/^\d+\.\s*/,'')}</td>
           <td>${r[C.item]||'—'}</td>
           <td>${statusTag}</td>
+          <td style="white-space:nowrap">${encTag}</td>
           <td>${r[C.note]||'—'}</td>
           <td>${photoHtml||'—'}</td>
         </tr>`;
@@ -544,7 +547,7 @@ function renderTrendChart() {
 function showSectionDetail(secKey, secLabel) {
   const dateVal = document.getElementById('dateFilter').value;
   const sRows = allData.filter(r=>r[C.section]===secKey&&(!dateVal||r._d===dateVal))
-    .sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
+    .sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||'''));
   openModal(secLabel, `${sRows.length} รายการ`, sRows);
 }
 
@@ -555,9 +558,9 @@ function renderHeatmap(rows) {
   if (!secFilter || secFilter === '1. ตรวจรุกล้ำ') {
     renderHeatmapEnc(rows, el);
   } else if (secFilter === '2. ตรวจความสะอาด') {
-    renderHeatmapItems(rows, el, '2. ตรวจความสะอาด', KNOWN_ZONES2, KNOWN_ITEMS2, 'ไม่ผ่าน', 'ผ่าน', 'ไม่ผ่าน');
+    renderHeatmapItems(rows, el, '2. ตรวจความสะอาด', KNOWN_ZONES2, KNOWN_ITEMS2, 'ไม่ผ่าน', 'ผ่าน', 'ไม่ผ่า');
   } else {
-    renderHeatmapItems(rows, el, '3. ตรวจบัตรสมาชิก', KNOWN_ZONES3, KNOWN_ITEMS3, 'ผิดปกติ', 'ปกติ', 'ผิดปกติ');
+    renderHeatmapItems(rows, el, '3. ตรวจบัตรสมาชิก', KNOWN_ZONES3, KNOWN_ITEMS3, 'ผ');
   }
 }
 
@@ -594,6 +597,10 @@ function renderHeatmapEnc(rows, el) {
       }
       html += `<td><div class="hm-cell ${cls}" title="${title}" ${onclick}></div></td>`;
     });
+    html += '</tr>';
+  });
+
+  html += `</tbody></tabl    });
     html += '</tr>';
   });
 
@@ -829,32 +836,5 @@ function renderGuardTable(rows){
   const stats={};
   rows.forEach(r=>{
     const g=(r[C.guard]||'').trim(); if(!g) return;
-    if(!stats[g]) stats[g]={name:g,total:0,dates:new Set(),problems:0,rows:[]};
-    stats[g].total++; stats[g].rows.push(r);
-    if(r._d) stats[g].dates.add(r._d);
-    if(isProblem(r)) stats[g].problems++;
-  });
-  const sorted=Object.values(stats).sort((a,b)=>b.total-a.total);
-  const el=document.getElementById('tblGuard');
-  if(!sorted.length){ el.innerHTML='<div class="msg">ไม่มีข้อมูล</div>'; return; }
-  el.innerHTML=`<table>
-    <thead><tr><th>ชื่อผู้ตรวจ</th><th>รายการตรวจ</th><th>วันที่ตรวจ</th><th>พบปัญหา</th></tr></thead>
-    <tbody>${sorted.map((v,i)=>`<tr class="clickable" onclick="showGuardDetail(${i})">
-      <td>${v.name}</td>
-      <td>${v.total} รายการ</td>
-      <td><span class="tag tag-green">${v.dates.size} วัน</span></td>
-      <td><span class="tag ${v.problems>0?'tag-red':'tag-gray'}">${v.problems}</span></td>
-    </tr>`).join('')}</tbody>
-  </table>`;
-  window._guardData=sorted;
-}
-function showGuardDetail(idx){
-  const v=window._guardData[idx]; if(!v) return;
-  openModal(v.name, `ตรวจ ${v.total} รายการ / ${v.dates.size} วัน`,
-    v.rows.sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||'')));
-}
-
-loadData();
-</script>
-</body>
-</html>
+    if(!i�х��m�t���х��m�t������霱ѽх������ѕ�鹕܁M�Р���ɽ��������ɽ���mu��(�����х��m�t�ѽх�����х��m�t�ɽ�̹��͠�Ȥ�(�������ȹ}����х��m�t���ѕ̹����ȹ}���(���������Aɽ�����Ȥ���х��m�t��ɽ����̬��(�����(������Ёͽ�ѕ��=����йم�Օ̡�х�̤�ͽ�Р���������ѽх����ѽх���(������Ё������յ��й���������	�%���щ�Յɐ���(������ͽ�ѕ������Ѡ�쁕�������!Q50���؁������͜�����⇂�#�⇂�ׂ���'�ⷂ⇂���𽑥����ɕ��ɸ��(����������!Q50���х����(�����ѡ���������Ѡ���+��߂�#�ⷂ�s����'��W�⏂⟂� �Ѡ��Ѡ��⏂�˂⋂���˂⏂�W�⏂⟂� �Ѡ��Ѡ��⟂�ǂ�g��_��ׂ�#��W�⏂⟂� �Ѡ��Ѡ���{��k��o��ǂ�7�⯂���Ѡ������ѡ����(�����щ������ͽ�ѕ�������ر�������ȁ�����􉍱�����������������͡��Յɑ�х����������(�������ѐ���ع������ѐ�(�������ѐ���عѽх��⏂�˂⋂���˂��ѐ�(�������ѐ�������������х��х���ɕ������ع��ѕ̹ͥ��⟂�ǂ�d�������ѐ�(�������ѐ�������������х����ع�ɽ���������х��ɕ���х���Ʌ�����ع�ɽ�������������ѐ�(���������������������щ����(���х������(��ݥ���ܹ}�Յɑ�ф�ͽ�ѕ��)�)�չ�ѥ���͡��Յɑ�х�������(������Ё��ݥ���ܹ}�Յɑ�хm���t쁥���ؤ�ɕ��ɸ�(������5�����ع���������W�⏂⟂� ���عѽх��⏂�˂⋂���˂⌀����ع��ѕ̹ͥ��⟂�ǂ�e��(����عɽ�̹ͽ�Р���������m���ѕu�𜜤�������
+����ɔ��m���ѕu�𜜤���)�()�����ф���(�͍ɥ���(𽉽���(�ѵ��(
