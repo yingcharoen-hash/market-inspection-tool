@@ -146,7 +146,10 @@
         <div class="modal-title" id="modalTitle"></div>
         <div class="modal-sub"  id="modalSub"></div>
       </div>
-      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-refresh" style="background:rgba(255,255,255,.2);border:none;padding:5px 12px" onclick="printModalReport()">🖨️ พิมพ์หน้านี้</button>
+        <button class="modal-close" onclick="closeModalDirect()">✕</button>
+      </div>
     </div>
     <div class="modal-body" id="modalBody"></div>
   </div>
@@ -299,6 +302,9 @@ function tsTime(ts) {
 
 // ── Modal ─────────────────────────────────────
 function openModal(title, sub, rows) {
+  window._modalTitle = title;
+  window._modalSub = sub;
+  window._modalRows = rows;
   document.getElementById('modalTitle').textContent = title;
   document.getElementById('modalSub').textContent   = sub;
   if (!rows.length) {
@@ -327,6 +333,62 @@ function openModal(title, sub, rows) {
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
+
+function printModalReport() {
+  const rows = window._modalRows || [];
+  if (!rows.length) return;
+  const title = window._modalTitle || '';
+  const sub = window._modalSub || '';
+
+  let html = `<html><head><title>รายงาน ${title}</title>
+  <style>
+    body { font-family: sans-serif; font-size: 13px; line-height: 1.5; color: #333; margin: 40px; }
+    h2 { text-align: center; margin-bottom: 5px; }
+    .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 12px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f5f5f5; font-weight: bold; }
+    .photo { max-width: 150px; max-height: 150px; border-radius: 4px; border: 1px solid #eee; margin: 2px; }
+    @media print { body { margin: 0; } }
+  </style></head><body>`;
+
+  html += `<h2>${title}</h2>`;
+  html += `<div class="subtitle">${sub}</div>`;
+
+  html += `<table><thead><tr>
+    <th style="width:12%">วันที่</th>
+    <th style="width:10%">เวลา</th>
+    <th style="width:15%">ผู้ตรวจ</th>
+    <th style="width:15%">ผลตรวจ</th>
+    <th style="width:18%">หมายเหตุ</th>
+    <th style="width:30%">รูปภาพ</th>
+  </tr></thead><tbody>`;
+  
+  rows.forEach(r => {
+    const photos = [r[C.photo1], r[C.photo2]].filter(Boolean);
+    const photoHtml = photos.map(p => `<img src="${p}" class="photo" />`).join('');
+    const bad = isProblem(r);
+    const encTag = r[C.encType] ? `<br><small style="color:#B86800">[${r[C.encType]}]</small>` : '';
+    
+    html += `<tr>
+      <td style="white-space:nowrap">${displayDate(r._d)}</td>
+      <td style="white-space:nowrap">${tsTime(r[C.timestamp]) !== '—' ? tsTime(r[C.timestamp]) : itemTime(r[C.item])}</td>
+      <td>${r[C.guard]||'—'}</td>
+      <td style="color:${bad?'#B71C1C':'#1B5E3B'}; font-weight:bold">${r[C.status]||'—'}${encTag}</td>
+      <td>${r[C.note]||'—'}</td>
+      <td>${photoHtml||'—'}</td>
+    </tr>`;
+  });
+  html += `</tbody></table></body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.onload = function() {
+    setTimeout(() => { win.print(); }, 500);
+  };
+}
+
 function closeModal(e) { if (e.target===document.getElementById('modalOverlay')) closeModalDirect(); }
 function closeModalDirect() { document.getElementById('modalOverlay').classList.remove('open'); document.body.style.overflow=''; }
 document.addEventListener('keydown', e => { if (e.key==='Escape') closeModalDirect(); });
