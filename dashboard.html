@@ -182,6 +182,7 @@
       <option value="2. ตรวจความสะอาด">ตรวจความสะอาด</option>
       <option value="3. ตรวจบัตรสมาชิก">ตรวจบัตรสมาชิก</option>
     </select>
+      <select id="encTypeFilter" onchange="render()" style="margin-left:10px;"><option value="">ประเภทรุกล้ำ: ทั้งหมด</option></select>
   </div>
 </div>
 
@@ -234,6 +235,7 @@ const C = {
   note:     'หมายเหตุ',
   photo1:   'รูปภาพ1',
   photo2:   'รูปภาพ2',
+  encType:  'ประเภทการรุกล้ำ',
   timestamp:'เวลาบันทึก'
 };
 
@@ -420,6 +422,9 @@ async function loadData() {
     const today = todayThai();
     document.getElementById('dateStart').value = today;
     document.getElementById('dateEnd').value = today;
+    const encTypes = [...new Set(allData.map(r => r[C.encType]).filter(Boolean))].sort();
+    const encFilterEl = document.getElementById('encTypeFilter');
+    encFilterEl.innerHTML = '<option value="">ประเภทรุกล้ำ: ทั้งหมด</option>' + encTypes.map(t => `<option value="${t}">${t}</option>`).join('');
 
     document.getElementById('lastUpdate').textContent =
       'อัปเดต ' + new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'});
@@ -467,10 +472,13 @@ function getFiltered() {
   const dateStart = document.getElementById('dateStart').value;
   const dateEnd   = document.getElementById('dateEnd').value;
   const sec       = document.getElementById('sectionFilter').value;
+  const encType   = document.getElementById('encTypeFilter').value;
+  document.getElementById('encTypeFilter').style.display = (!sec || sec === '1. ตรวจรุกล้ำ') ? 'inline-block' : 'none';
   return allData.filter(r => {
     if (dateStart && r._d < dateStart) return false;
     if (dateEnd   && r._d > dateEnd)   return false;
     if (sec       && r[C.section] !== sec)  return false;
+    if (encType   && r[C.encType] !== encType) return false;
     return true;
   });
 }
@@ -558,6 +566,12 @@ function render() {
 
     ${secSummaryHtml}
 
+    <div class="chart-row" id="encTypeRow" style="display:none;">
+      <div class="card" style="flex:1;">
+        <div class="card-head">สัดส่วนประเภทการรุกล้ำ <span class="click-hint">— คลิกแท่งเพื่อดูรายละเอียด</span></div>
+        <div class="chart-wrap"><canvas id="chartEncType"></canvas></div>
+      </div>
+    </div>
     <div class="chart-row">
       <div class="card">
         <div class="card-head">ปัญหาแต่ละโซน <span class="click-hint">— คลิกแท่งเพื่อดูรายละเอียด</span></div>
@@ -602,6 +616,7 @@ function render() {
   `;
 
   renderZoneChart(badRows, rows);
+  renderEncTypeChart(badRows);
   renderTrendChart();
   renderHeatmap(rows);
   renderRoundCompletion(rows);
@@ -610,6 +625,53 @@ function render() {
 }
 
 // ── Zone chart ────────────────────────────────
+function renderEncTypeChart(badRows) {
+  const rowEl = document.getElementById('encTypeRow');
+  const secFilter = document.getElementById('sectionFilter').value;
+  if (secFilter && secFilter !== '1. ตรวจรุกล้ำ') {
+    rowEl.style.display = 'none';
+    return;
+  }
+  const encRows = badRows.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
+  if (encRows.length === 0) {
+    rowEl.style.display = 'none';
+    return;
+  }
+  rowEl.style.display = 'flex';
+
+  const cnt = {};
+  encRows.forEach(r => {
+    const t = r[C.encType] || 'ไม่ระบุ';
+    cnt[t] = (cnt[t] || 0) + 1;
+  });
+  const sorted = Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
+
+  const ctx = document.getElementById('chartEncType').getContext('2d');
+  charts.encType = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(x=>x[0]),
+      datasets: [{
+        data: sorted.map(x=>x[1]),
+        backgroundColor: 'rgba(211, 47, 47, 0.7)',
+        borderColor: '#D32F2F',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      onClick: (e, els) => {
+        if (!els.length) return;
+        const idx = els[0].index;
+        const typeName = sorted[idx][0];
+        const detailRows = encRows.filter(r => (r[C.encType]||'ไม่ระบุ') === typeName);
+        openModal(`ประเภทการรุกล้ำ: ${typeName}`, `พบ ${detailRows.length} รายการ`, detailRows);
+      }
+    }
+  });
+}
+
 function renderZoneChart(badRows, allRows) {
   const cnt = {};
   badRows.forEach(r=>{ if(r[C.location]) cnt[r[C.location]]=(cnt[r[C.location]]||0)+1; });
