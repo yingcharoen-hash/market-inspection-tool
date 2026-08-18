@@ -373,8 +373,16 @@ function printModalReport() {
   </tr></thead><tbody>`;
   
   rows.forEach(r => {
+const getImgSrc = (url) => {
+      if (!url) return '';
+      const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
+      if (m1) return `https://drive.google.com/uc?export=view&id=${m1[1]}`;
+      const m2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+      if (m2) return `https://drive.google.com/uc?export=view&id=${m2[1]}`;
+      return url;
+    };
     const photos = [r[C.photo1], r[C.photo2]].filter(Boolean);
-    const photoHtml = photos.map(p => `<img src="${p}" class="photo" />`).join('');
+    const photoHtml = photos.map(p => `<img src="${getImgSrc(p)}" class="photo" onerror="this.style.display='none'" />`).join('');
     const bad = isProblem(r);
     const encTag = r[C.encType] ? `<br><small style="color:#B86800">[${r[C.encType]}]</small>` : '';
     
