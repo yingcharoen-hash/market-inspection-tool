@@ -356,8 +356,8 @@ function printModalReport() {
     table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 12px; }
     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
     th { background-color: #f5f5f5; font-weight: bold; }
-    .photo { max-width: 150px; max-height: 150px; border-radius: 4px; border: 1px solid #eee; margin: 2px; }
-    @media print { body { margin: 0; } }
+    .photo { max-width: 150px; max-height: 150px; border-radius: 4px; border: 1px solid #eee; margin: 2px; cursor: pointer; transition: transform 0.2s; }
+    @media print { body { margin: 0; } .no-print { display: none !important; } }
   </style></head><body>`;
 
   html += `<h2>${title}</h2>`;
@@ -374,7 +374,7 @@ function printModalReport() {
   
   rows.forEach(r => {
 const photos = [r[C.photo1], r[C.photo2]].filter(Boolean);
-    const photoHtml = photos.map(p => `<img src="${getImgSrc(p)}" class="photo" />`).join('');
+    const photoHtml = photos.map(p => `<img src="${getImgSrc(p)}" class="photo" onclick="rotateImg(this)" title="คลิกเพื่อหมุนรูป" />`).join('');
     const bad = isProblem(r);
     const encTag = r[C.encType] ? `<br><small style="color:#B86800">[${r[C.encType]}]</small>` : '';
     
@@ -387,7 +387,17 @@ const photos = [r[C.photo1], r[C.photo2]].filter(Boolean);
       <td>${photoHtml||'—'}</td>
     </tr>`;
   });
-  html += `</tbody></table></body></html>`;
+  html += `</tbody></table>
+  <button onclick="window.print()" class="no-print" style="position:fixed; top:20px; right:20px; padding:10px 15px; background:#1B5E3B; color:white; border:none; border-radius:5px; cursor:pointer; font-size:14px; z-index:9999; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🖨️ สั่งพิมพ์อีกครั้ง</button>
+  <script>
+    function rotateImg(img) {
+      let current = parseInt(img.getAttribute('data-rot') || '0', 10);
+      current = (current + 90) % 360;
+      img.setAttribute('data-rot', current);
+      img.style.transform = "rotate(" + current + "deg)";
+    }
+  <\/script>
+</body></html>`;
 
   const win = window.open('', '_blank');
   win.document.write(html);
@@ -964,9 +974,9 @@ function printRepeatReport() {
     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
     th { background-color: #f5f5f5; font-weight: bold; }
     .section-title { font-size: 16px; font-weight: bold; margin-top: 30px; margin-bottom: 10px; border-bottom: 2px solid #1B5E3B; padding-bottom: 5px; color: #1B5E3B; }
-    .photo { max-width: 150px; max-height: 150px; border-radius: 4px; border: 1px solid #eee; margin: 2px; }
+    .photo { max-width: 150px; max-height: 150px; border-radius: 4px; border: 1px solid #eee; margin: 2px; cursor: pointer; transition: transform 0.2s; }
     .page-break { page-break-before: always; }
-    @media print { body { margin: 0; } }
+    @media print { body { margin: 0; } .no-print { display: none !important; } }
   </style></head><body>`;
 
   html += `<h2>รายงานร้านค้า / จุดที่พบซ้ำ (${secFilter})</h2>`;
