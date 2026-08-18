@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <!-- deploy trigger -->
 <html lang="th">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>เธ•เธฅเธฒเธ”เธขเธดเนเธเน€เธเธฃเธดเธ โ€” Dashboard เธ•เธฃเธงเธเธ•เธฅเธฒเธ”</title>
+  <title>ตลาดยิ่งเจริญ — Dashboard ตรวจตลาด</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -146,7 +146,7 @@
         <div class="modal-title" id="modalTitle"></div>
         <div class="modal-sub"  id="modalSub"></div>
       </div>
-      <button class="modal-close" onclick="closeModalDirect()">โ•</button>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
     </div>
     <div class="modal-body" id="modalBody"></div>
   </div>
@@ -155,100 +155,100 @@
 <!-- Top bar -->
 <div class="topbar">
   <div>
-    <div class="topbar-brand">เธ•เธฅเธฒเธ”เธขเธดเนเธเน€เธเธฃเธดเธ</div>
-    <div class="topbar-title">Dashboard เธ•เธฃเธงเธเธ•เธฅเธฒเธ”</div>
+    <div class="topbar-brand">ตลาดยิ่งเจริญ</div>
+    <div class="topbar-title">Dashboard ตรวจตลาด</div>
   </div>
   <div class="topbar-right">
     <span class="topbar-time" id="lastUpdate"></span>
-    <button class="btn-refresh" onclick="loadData()">เธฃเธตเน€เธเธฃเธ</button>
+    <button class="btn-refresh" onclick="loadData()">รีเฟรช</button>
   </div>
 </div>
 
 <div class="filterbar">
   <div class="fi">
-    <label>เธงเธฑเธเธ—เธตเน</label>
-    <select id="dateFilter" onchange="render()"><option value="">เธ—เธฑเนเธเธซเธกเธ”</option></select>
+    <label>วันที่</label>
+    <select id="dateFilter" onchange="render()"><option value="">ทั้งหมด</option></select>
   </div>
   <div class="fi">
-    <label>เธซเธกเธงเธ”</label>
+    <label>หมวด</label>
     <select id="sectionFilter" onchange="render()">
-      <option value="">เธ—เธฑเนเธเธซเธกเธ”</option>
-      <option value="1. เธ•เธฃเธงเธเธฃเธธเธเธฅเนเธณ">เธ•เธฃเธงเธเธฃเธธเธเธฅเนเธณ</option>
-      <option value="2. เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”">เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”</option>
-      <option value="3. เธ•เธฃเธงเธเธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ">เธ•เธฃเธงเธเธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ</option>
+      <option value="">ทั้งหมด</option>
+      <option value="1. ตรวจรุกล้ำ">ตรวจรุกล้ำ</option>
+      <option value="2. ตรวจความสะอาด">ตรวจความสะอาด</option>
+      <option value="3. ตรวจบัตรสมาชิก">ตรวจบัตรสมาชิก</option>
     </select>
   </div>
 </div>
 
 <div class="main" id="main">
-  <div class="msg">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</div>
+  <div class="msg">กำลังโหลดข้อมูล...</div>
 </div>
 
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3N1gxp9Gf94x-dXNbqgzUpirfQuy44YO6-rgcnS_OTVdAzp5Nw10cigkCcoy_uNlu/exec";
 
-// เนเธเธเนเธฅเธฐเธฃเธญเธเน€เธงเธฅเธฒเธเธเธ—เธตเน โ€” เธ•เนเธญเธเธ•เธฃเธเธเธฑเธ ZONES1 เนเธฅเธฐ ROUNDS เนเธ index.html
+// โซนและรอบเวลาคงที่ — ต้องตรงกับ ZONES1 และ ROUNDS ใน index.html
 const KNOWN_ZONES  = [
-  "เธญเธฒเธเธฒเธฃเธขเธฒเธง เธเธฅเธฒเธเนเธณเธเธทเธ”-เธเธฅเธฒเธ—เธฐเน€เธฅ",
-  "เธญเธฒเธเธฒเธฃเธขเธฒเธง เธ—เนเธฒเธขเน€เธเธเธฃ",
-  "เธญเธฒเธเธฒเธฃเธเธฅเธฒเธ",
-  "เธเธฅเธฒเธเนเธฒ + เธเธนเนเธ”เธเธฅเธฒเธเนเธฒ + เธญเธฒเธเธฒเธฃเธเธเธฃเธฑเธเธฉเน",
-  "เนเธเธเธญเธฒเธเธฒเธฃเธเธฑเธ 2",
-  "เนเธเธเธญเธฒเธเธฒเธฃ 60 เธเธต",
-  "เนเธเธเน€เธ—เธเนเธฎเธก"
+  "อาคารยาว ปลาน้ำจืด-ปลาทะเล",
+  "อาคารยาว ท้ายเพชร",
+  "อาคารกลาง",
+  "พลาซ่า + ฟู้ดพลาซ่า + อาคารจงรักษ์",
+  "โซนอาคารผัก 2",
+  "โซนอาคาร 60 ปี",
+  "โซนเทคโฮม"
 ];
 const KNOWN_ROUNDS = ["00:00","03:00","06:00","08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00"];
 
-const KNOWN_ZONES2 = ["เนเธเธเธญเธฒเธเธฒเธฃเธเธฅเธฒเธ","เนเธเธเธญเธฒเธเธฒเธฃเธเธฑเธ2","เนเธเธเธญเธฒเธเธฒเธฃ60เธเธต","เนเธเธเธญเธฒเธเธฒเธฃ800เธ•เธฃเธก.","เนเธเธเธญเธฒเธเธฒเธฃเธขเธฒเธง","take home","เนเธเธเธเธนเนเธ”เธเธฅเธฒเธเนเธฒ","เนเธเธเธเธฃเธฑเธงเธขเธดเนเธเน€เธเธฃเธดเธ"];
+const KNOWN_ZONES2 = ["โซนอาคารกลาง","โซนอาคารผัก2","โซนอาคาร60ปี","โซนอาคาร800ตรม.","โซนอาคารยาว","take home","โซนฟู้ดพลาซ่า","โซนครัวยิ่งเจริญ"];
 const KNOWN_ITEMS2 = [
-  {full:"เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”เนเธเธ", short:"เนเธเธ"},
-  {full:"เธ•เธฃเธงเธเธเนเธฒเธขเธเธทเนเธญเธฃเนเธฒเธเธชเธฐเธญเธฒเธ”เนเธซเธก (เนเธกเนเธชเธเธเธฃเธ)", short:"เธเนเธฒเธขเธเธทเนเธญ"},
-  {full:"เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”เธเธฑเธ”เธฅเธก (เนเธกเนเธกเธตเธเธฃเธฒเธเธชเธเธเธฃเธ/เธซเธขเธฒเธเนเธขเน)", short:"เธเธฑเธ”เธฅเธก"},
-  {full:"เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”เนเธเธกเนเธ/เธซเธฅเธญเธ”เนเธ (เนเธกเนเธชเธเธเธฃเธ เนเธกเนเธกเธตเธซเธขเธฒเธเนเธขเน)", short:"เนเธเธกเนเธ"},
-  {full:"เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”เธฃเนเธญเธเธเนเธณ (เนเธกเนเธกเธตเน€เธจเธฉเธญเธฒเธซเธฒเธฃ/เธเธขเธฐ/เธเธฃเธฒเธ)", short:"เธฃเนเธญเธเธเนเธณ"},
-  {full:"เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”เนเธ•เนเนเธเธ (เนเธกเนเธชเธเธเธฃเธ เนเธกเนเธกเธตเธขเธธเธ)", short:"เนเธ•เนเนเธเธ"},
-  {full:"เธ•เธฃเธงเธเธ–เธฑเธเธ”เธฑเธเนเธเธกเธฑเธ (เธชเธฐเธญเธฒเธ” เนเธกเนเธกเธตเธเธฃเธฒเธเนเธเธกเธฑเธ)", short:"เธ–เธฑเธเธ”เธฑเธเนเธเธกเธฑเธ"},
-  {full:"เธ•เธฃเธงเธเน€เธเธฃเธทเนเธญเธเธ”เธนเธ”เธเธงเธฑเธ (เธชเธฐเธญเธฒเธ” เนเธกเนเธกเธตเธเธฃเธฒเธเธชเธเธเธฃเธ)", short:"เน€เธเธฃเธทเนเธญเธเธ”เธนเธ”เธเธงเธฑเธ"},
-  {full:"เธ•เธฃเธงเธเธเนเธฒเธขเธฃเธฒเธเธฒเธเธฑเธ”เน€เธเธ", short:"เธเนเธฒเธขเธฃเธฒเธเธฒ"}
+  {full:"ตรวจความสะอาดแผง", short:"แผง"},
+  {full:"ตรวจป้ายชื่อร้านสะอาดไหม (ไม่สกปรก)", short:"ป้ายชื่อ"},
+  {full:"ตรวจความสะอาดพัดลม (ไม่มีคราบสกปรก/หยากไย่)", short:"พัดลม"},
+  {full:"ตรวจความสะอาดโคมไฟ/หลอดไฟ (ไม่สกปรก ไม่มีหยากไย่)", short:"โคมไฟ"},
+  {full:"ตรวจความสะอาดร่องน้ำ (ไม่มีเศษอาหาร/ขยะ/คราบ)", short:"ร่องน้ำ"},
+  {full:"ตรวจความสะอาดใต้แผง (ไม่สกปรก ไม่มียุง)", short:"ใต้แผง"},
+  {full:"ตรวจถังดักไขมัน (สะอาด ไม่มีคราบไขมัน)", short:"ถังดักไขมัน"},
+  {full:"ตรวจเครื่องดูดควัน (สะอาด ไม่มีคราบสกปรก)", short:"เครื่องดูดควัน"},
+  {full:"ตรวจป้ายราคาชัดเจน", short:"ป้ายราคา"}
 ];
 
-const KNOWN_ZONES3 = ["เนเธเธเธญเธฒเธเธฒเธฃเธเธฅเธฒเธ","เนเธเธเธญเธฒเธเธฒเธฃเธเธฑเธ2","เนเธเธเธญเธฒเธเธฒเธฃ60เธเธต","เนเธเธเธญเธฒเธเธฒเธฃ800เธ•เธฃเธก.","เนเธเธเธญเธฒเธเธฒเธฃเธขเธฒเธง","take home","เนเธเธเธเธนเนเธ”เธเธฅเธฒเธเนเธฒ","เนเธเธเธเธฃเธฑเธงเธขเธดเนเธเน€เธเธฃเธดเธ","เนเธเธเธญเธฒเธเธฒเธฃเธเธเธฃเธฑเธเธฉเน","เนเธเธเธเธฅเธฒเธเนเธฒ","เนเธเธเธเธฅเธฒเธเนเธฒ2","เนเธเธเธเธธเธกเน€เธฃเธทเธญเธเนเธ—เธข(เธฅเธญเธ•เน€เธ•เธญเธฃเธตเน)"];
+const KNOWN_ZONES3 = ["โซนอาคารกลาง","โซนอาคารผัก2","โซนอาคาร60ปี","โซนอาคาร800ตรม.","โซนอาคารยาว","take home","โซนฟู้ดพลาซ่า","โซนครัวยิ่งเจริญ","โซนอาคารจงรักษ์","โซนพลาซ่า","โซนพลาซ่า2","โซนชุมเรือนไทย(ลอตเตอรี่)"];
 const KNOWN_ITEMS3 = [
-  {full:"เธ•เธฃเธงเธเธเธทเนเธญเธฃเนเธฒเธเธ•เธฃเธเธเธฑเธเธเธทเนเธญเนเธเธเธฑเธ•เธฃเธซเธฃเธทเธญเนเธกเน", short:"เธเธทเนเธญเธ•เธฃเธเธเธฑเธ•เธฃ"},
-  {full:"เธ•เธฃเธงเธเธงเนเธฒเธกเธตเธเธฑเธ•เธฃเนเธซเธกเนเธซเธฃเธทเธญเนเธกเน", short:"เธเธฑเธ•เธฃเนเธซเธกเน"},
-  {full:"เธ•เธฃเธงเธเธฃเธนเธเธ–เนเธฒเธขเนเธเธเธฑเธ•เธฃเธ•เธฃเธเธเธฑเธเธเธนเนเธ–เธทเธญเธเธฑเธ•เธฃเธซเธฃเธทเธญเนเธกเน", short:"เธฃเธนเธเธ•เธฃเธเธเธฑเธ•เธฃ"}
+  {full:"ตรวจชื่อร้านตรงกับชื่อในบัตรหรือไม่", short:"ชื่อตรงบัตร"},
+  {full:"ตรวจว่ามีบัตรใหม่หรือไม่", short:"บัตรใหม่"},
+  {full:"ตรวจรูปถ่ายในบัตรตรงกับผู้ถือบัตรหรือไม่", short:"รูปตรงบัตร"}
 ];
 
 const C = {
-  date:     'เธงเธฑเธเธ—เธตเน',
-  guard:    'เธเธนเนเธ•เธฃเธงเธ',
-  section:  'เธซเธกเธงเธ”',
-  location: 'เธชเธ–เธฒเธเธ—เธตเน/เนเธเธ',
-  item:     'เธฃเธฒเธขเธเธฒเธฃ',
-  status:   'เธเธฅเธ•เธฃเธงเธ',
-  encType:  'เธเธฃเธฐเน€เธ เธ—เธเธฒเธฃเธฃเธธเธเธฅเนเธณ',
-  note:     'เธซเธกเธฒเธขเน€เธซเธ•เธธ',
-  photo1:   'เธฃเธนเธเธ เธฒเธ1',
-  photo2:   'เธฃเธนเธเธ เธฒเธ2',
-  timestamp:'เน€เธงเธฅเธฒเธเธฑเธเธ—เธถเธ'
+  date:     'วันที่',
+  guard:    'ผู้ตรวจ',
+  section:  'หมวด',
+  location: 'สถานที่/โซน',
+  item:     'รายการ',
+  status:   'ผลตรวจ',
+  encType:  'ประเภทการรุกล้ำ',
+  note:     'หมายเหตุ',
+  photo1:   'รูปภาพ1',
+  photo2:   'รูปภาพ2',
+  timestamp:'เวลาบันทึก'
 };
 
-// "เธเธเธเธฑเธเธซเธฒ/เนเธกเนเธเนเธฒเธ" across all sections
+// "พบปัญหา/ไม่ผ่าน" across all sections
 function isProblem(r) {
   const s = r[C.status] || '';
-  return s === 'เธเธเธเธฒเธฃเธฃเธธเธเธฅเนเธณ' || s === 'เนเธกเนเธเนเธฒเธ' || s === 'เธเธดเธ”เธเธเธ•เธด' || (s.startsWith('เธเธ') && s !== 'เธเธ');
+  return s === 'พบการรุกล้ำ' || s === 'ไม่ผ่าน' || s === 'ผิดปกติ' || (s.startsWith('พบ') && s !== 'พบ');
 }
 
 const SECTIONS = [
-  { key: '1. เธ•เธฃเธงเธเธฃเธธเธเธฅเนเธณ',      label: 'เธ•เธฃเธงเธเธฃเธธเธเธฅเนเธณ',     cls: 'enc'   },
-  { key: '2. เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”',   label: 'เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”',  cls: 'clean' },
-  { key: '3. เธ•เธฃเธงเธเธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ',  label: 'เธ•เธฃเธงเธเธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ', cls: 'card2' },
+  { key: '1. ตรวจรุกล้ำ',      label: 'ตรวจรุกล้ำ',     cls: 'enc'   },
+  { key: '2. ตรวจความสะอาด',   label: 'ตรวจความสะอาด',  cls: 'clean' },
+  { key: '3. ตรวจบัตรสมาชิก',  label: 'ตรวจบัตรสมาชิก', cls: 'card2' },
 ];
 
 let allData = [];
 let charts  = {};
 
-// โ”€โ”€ Date helpers โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ── Date helpers ──────────────────────────────
 function toThaiDate(isoStr) {
   if (!isoStr) return '';
   const d = new Date(isoStr);
@@ -268,7 +268,7 @@ function todayThai() {
 }
 function displayDate(s) {
   if (!s) return '';
-  const mo = ['เธก.เธ.','เธ.เธ.','เธกเธต.เธ.','เน€เธก.เธข.','เธ.เธ.','เธกเธด.เธข.','เธ.เธ.','เธช.เธ.','เธ.เธข.','เธ•.เธ.','เธ.เธข.','เธ.เธ.'];
+  const mo = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const [y, m, d] = s.split('-');
   return parseInt(d) + ' ' + mo[parseInt(m)-1] + ' ' + (parseInt(y)+543);
 }
@@ -279,48 +279,48 @@ function displayTime(isoStr) {
   return d.toLocaleTimeString('th-TH', { timeZone:'Asia/Bangkok', hour:'2-digit', minute:'2-digit' });
 }
 function itemTime(item) {
-  // เธ”เธถเธเน€เธงเธฅเธฒเธฃเธญเธเธเธฒเธ "เธฃเธญเธ HH:MM" โ€” fallback เธชเธณเธซเธฃเธฑเธเธเธฃเธ“เธตเนเธกเนเธกเธต timestamp
-  const m = (item || '').match(/เธฃเธญเธ\s*(\d{2}:\d{2})/);
-  return m ? m[1] : 'โ€”';
+  // ดึงเวลารอบจาก "รอบ HH:MM" — fallback สำหรับกรณีไม่มี timestamp
+  const m = (item || '').match(/รอบ\s*(\d{2}:\d{2})/);
+  return m ? m[1] : '—';
 }
 function tsTime(ts) {
-  if (!ts) return 'โ€”';
+  if (!ts) return '—';
   const s = String(ts);
-  // ISO string (เธกเธต T เนเธฅเธฐ Z/+) โ’ เนเธเน displayTime เน€เธเธทเนเธญเนเธเธฅเธ timezone Bangkok เนเธซเนเธ–เธนเธเธ•เนเธญเธ
+  // ISO string (มี T และ Z/+) → ใช้ displayTime เพื่อแปลง timezone Bangkok ให้ถูกต้อง
   if (s.includes('T') && (s.endsWith('Z') || s.includes('+'))) {
-    return displayTime(s) || 'โ€”';
+    return displayTime(s) || '—';
   }
-  // format "DD/MM/YYYY HH:MM:SS" เธเธฒเธ toLocaleString en-GB
+  // format "DD/MM/YYYY HH:MM:SS" จาก toLocaleString en-GB
   const m = s.match(/(\d{2}:\d{2})(?::\d{2})?/);
   if (m) return m[1];
-  return 'โ€”';
+  return '—';
 }
 
-// โ”€โ”€ Modal โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ── Modal ─────────────────────────────────────
 function openModal(title, sub, rows) {
   document.getElementById('modalTitle').textContent = title;
   document.getElementById('modalSub').textContent   = sub;
   if (!rows.length) {
-    document.getElementById('modalBody').innerHTML = '<div class="msg">เนเธกเนเธกเธตเธเนเธญเธกเธนเธฅ</div>';
+    document.getElementById('modalBody').innerHTML = '<div class="msg">ไม่มีข้อมูล</div>';
   } else {
     document.getElementById('modalBody').innerHTML = `<table>
-      <thead><tr><th>เธงเธฑเธเธ—เธตเน</th><th>เน€เธงเธฅเธฒ</th><th>เธเธนเนเธ•เธฃเธงเธ</th><th>เธซเธกเธงเธ”</th><th>เธฃเธฒเธขเธเธฒเธฃ</th><th>เธเธฅเธ•เธฃเธงเธ</th><th>เธเธฃเธฐเน€เธ เธ—</th><th>เธซเธกเธฒเธขเน€เธซเธ•เธธ</th><th>เธฃเธนเธ</th></tr></thead>
+      <thead><tr><th>วันที่</th><th>เวลา</th><th>ผู้ตรวจ</th><th>หมวด</th><th>รายการ</th><th>ผลตรวจ</th><th>ประเภท</th><th>หมายเหตุ</th><th>รูป</th></tr></thead>
       <tbody>${rows.map(r => {
         const photos = [r[C.photo1],r[C.photo2]].filter(Boolean);
-        const photoHtml = photos.map((p,i)=>`<a href="${p}" target="_blank" class="photo-link">เธฃเธนเธ${i+1}</a>`).join('');
+        const photoHtml = photos.map((p,i)=>`<a href="${p}" target="_blank" class="photo-link">รูป${i+1}</a>`).join('');
         const bad = isProblem(r);
-        const statusTag = `<span class="tag ${bad?'tag-red':'tag-gray'}">${r[C.status]||'โ€”'}</span>`;
-        const encTag = r[C.encType] ? `<span class="tag tag-amber" style="font-size:10px">${r[C.encType]}</span>` : 'โ€”';
+        const statusTag = `<span class="tag ${bad?'tag-red':'tag-gray'}">${r[C.status]||'—'}</span>`;
+        const encTag = r[C.encType] ? `<span class="tag tag-amber" style="font-size:10px">${r[C.encType]}</span>` : '—';
         return `<tr>
           <td style="white-space:nowrap">${displayDate(r._d)}</td>
-          <td style="white-space:nowrap;color:var(--sub)">${tsTime(r[C.timestamp]) !== 'โ€”' ? tsTime(r[C.timestamp]) : itemTime(r[C.item])}</td>
-          <td style="white-space:nowrap">${r[C.guard]||'โ€”'}</td>
+          <td style="white-space:nowrap;color:var(--sub)">${tsTime(r[C.timestamp]) !== '—' ? tsTime(r[C.timestamp]) : itemTime(r[C.item])}</td>
+          <td style="white-space:nowrap">${r[C.guard]||'—'}</td>
           <td style="white-space:nowrap;color:var(--sub)">${(r[C.section]||'').replace(/^\d+\.\s*/,'')}</td>
-          <td>${r[C.item]||'โ€”'}</td>
+          <td>${r[C.item]||'—'}</td>
           <td>${statusTag}</td>
           <td style="white-space:nowrap">${encTag}</td>
-          <td>${r[C.note]||'โ€”'}</td>
-          <td>${photoHtml||'โ€”'}</td>
+          <td>${r[C.note]||'—'}</td>
+          <td>${photoHtml||'—'}</td>
         </tr>`;
       }).join('')}</tbody>
     </table>`;
@@ -332,9 +332,9 @@ function closeModal(e) { if (e.target===document.getElementById('modalOverlay'))
 function closeModalDirect() { document.getElementById('modalOverlay').classList.remove('open'); document.body.style.overflow=''; }
 document.addEventListener('keydown', e => { if (e.key==='Escape') closeModalDirect(); });
 
-// โ”€โ”€ Load โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ── Load ──────────────────────────────────────
 async function loadData() {
-  document.getElementById('main').innerHTML = '<div class="msg">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</div>';
+  document.getElementById('main').innerHTML = '<div class="msg">กำลังโหลดข้อมูล...</div>';
   try {
     const res  = await fetch(SCRIPT_URL + '?action=data');
     const json = await res.json();
@@ -342,21 +342,21 @@ async function loadData() {
 
     const dates = [...new Set(allData.map(r=>r._d))].filter(Boolean).sort().reverse();
     const sel = document.getElementById('dateFilter');
-    sel.innerHTML = '<option value="">เธ—เธฑเนเธเธซเธกเธ”</option>';
+    sel.innerHTML = '<option value="">ทั้งหมด</option>';
     dates.forEach(d => { const o=document.createElement('option'); o.value=d; o.textContent=displayDate(d); sel.appendChild(o); });
     const today = todayThai();
     sel.value = dates.includes(today) ? today : (dates[0]||'');
 
     document.getElementById('lastUpdate').textContent =
-      'เธญเธฑเธเน€เธ”เธ• ' + new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'});
+      'อัปเดต ' + new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'});
     render();
   } catch(e) {
     document.getElementById('main').innerHTML =
-      `<div class="msg-error">เนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเนเธกเนเนเธ”เน<br><small style="opacity:.7">${e.message}</small></div>`;
+      `<div class="msg-error">โหลดข้อมูลไม่ได้<br><small style="opacity:.7">${e.message}</small></div>`;
   }
 }
 
-// โ”€โ”€ Filter โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ── Filter ────────────────────────────────────
 function getFiltered() {
   const date = document.getElementById('dateFilter').value;
   const sec  = document.getElementById('sectionFilter').value;
@@ -367,7 +367,7 @@ function getFiltered() {
   });
 }
 
-// โ”€โ”€ Render โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ── Render ────────────────────────────────────
 function render() {
   Object.values(charts).forEach(c=>{ try{c.destroy();}catch(e){} });
   charts = {};
@@ -377,18 +377,18 @@ function render() {
   const guards    = new Set(rows.map(r=>r[C.guard]).filter(Boolean));
   const dayCount  = new Set(rows.map(r=>r._d).filter(Boolean)).size;
   const secFilter = document.getElementById('sectionFilter').value;
-  const isEnc   = !secFilter || secFilter === '1. เธ•เธฃเธงเธเธฃเธธเธเธฅเนเธณ';
-  const isClean = secFilter === '2. เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”';
-  const isCard3 = secFilter === '3. เธ•เธฃเธงเธเธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ';
-  const hmTitle     = isClean ? 'เธฃเธนเธเนเธเธเธ•เธฒเธกเนเธเธเนเธฅเธฐเธฃเธฒเธขเธเธฒเธฃ (เธเธงเธฒเธกเธชเธฐเธญเธฒเธ”)'
-                    : isCard3 ? 'เธฃเธนเธเนเธเธเธ•เธฒเธกเนเธเธเนเธฅเธฐเธฃเธฒเธขเธเธฒเธฃ (เธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ)'
-                    : 'เธฃเธนเธเนเธเธเธเธฒเธฃเธฃเธธเธเธฅเนเธณเธ•เธฒเธกเธเนเธงเธเน€เธงเธฅเธฒ';
-  const roundTitle  = isClean ? 'เนเธเธเธ—เธตเน เธฃเธเธ . เธ•เธฃเธงเธ (เธเธงเธฒเธกเธชเธฐเธญเธฒเธ”)'
-                    : isCard3 ? 'เนเธเธเธ—เธตเน เธฃเธเธ . เธ•เธฃเธงเธ (เธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ)'
-                    : 'เธฃเธญเธเธ—เธตเน เธฃเธเธ . เธ•เธฃเธงเธ (เธฃเธธเธเธฅเนเธณ)';
-  const repeatTitle = isClean ? 'เธเธธเธ”เธ—เธตเนเนเธกเนเธเนเธฒเธเธเนเธณ (เธเธงเธฒเธกเธชเธฐเธญเธฒเธ”)'
-                    : isCard3 ? 'เธเธธเธ”เธ—เธตเนเธเธดเธ”เธเธเธ•เธดเธเนเธณ (เธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ)'
-                    : 'เธฃเนเธฒเธเธเนเธฒ / เธเธธเธ”เธ—เธตเนเธเธเธเนเธณ (เธฃเธธเธเธฅเนเธณ)';
+  const isEnc   = !secFilter || secFilter === '1. ตรวจรุกล้ำ';
+  const isClean = secFilter === '2. ตรวจความสะอาด';
+  const isCard3 = secFilter === '3. ตรวจบัตรสมาชิก';
+  const hmTitle     = isClean ? 'รูปแบบตามโซนและรายการ (ความสะอาด)'
+                    : isCard3 ? 'รูปแบบตามโซนและรายการ (บัตรสมาชิก)'
+                    : 'รูปแบบการรุกล้ำตามช่วงเวลา';
+  const roundTitle  = isClean ? 'โซนที่ รปภ. ตรวจ (ความสะอาด)'
+                    : isCard3 ? 'โซนที่ รปภ. ตรวจ (บัตรสมาชิก)'
+                    : 'รอบที่ รปภ. ตรวจ (รุกล้ำ)';
+  const repeatTitle = isClean ? 'จุดที่ไม่ผ่านซ้ำ (ความสะอาด)'
+                    : isCard3 ? 'จุดที่ผิดปกติซ้ำ (บัตรสมาชิก)'
+                    : 'ร้านค้า / จุดที่พบซ้ำ (รุกล้ำ)';
 
   const zoneCnt = {};
   badRows.forEach(r=>{ if(r[C.location]) zoneCnt[r[C.location]]=(zoneCnt[r[C.location]]||0)+1; });
@@ -402,22 +402,22 @@ function render() {
       const prob  = sRows.filter(isProblem).length;
       if (!sRows.length) return `<div class="sec-card ${s.cls}">
         <div class="sec-name">${s.label}</div>
-        <div style="font-size:12px;color:var(--sub)">เนเธกเนเธกเธตเธเนเธญเธกเธนเธฅเนเธเธเนเธงเธเธเธตเน</div>
+        <div style="font-size:12px;color:var(--sub)">ไม่มีข้อมูลในช่วงนี้</div>
       </div>`;
       return `<div class="sec-card ${s.cls}" style="cursor:pointer" onclick="showSectionDetail('${s.key}','${s.label}')">
         <div class="sec-name">${s.label}</div>
         <div class="sec-nums">
           <div class="sec-num">
             <div class="sec-num-val">${sRows.length}</div>
-            <div class="sec-num-label">เธฃเธฒเธขเธเธฒเธฃ</div>
+            <div class="sec-num-label">รายการ</div>
           </div>
           <div class="sec-num">
             <div class="sec-num-val ok">${ok}</div>
-            <div class="sec-num-label">เธเนเธฒเธ / เธเธเธ•เธด</div>
+            <div class="sec-num-label">ผ่าน / ปกติ</div>
           </div>
           <div class="sec-num">
             <div class="sec-num-val problem">${prob}</div>
-            <div class="sec-num-label">เนเธกเนเธเนเธฒเธ / เธเธเธเธฑเธเธซเธฒ</div>
+            <div class="sec-num-label">ไม่ผ่าน / พบปัญหา</div>
           </div>
         </div>
       </div>`;
@@ -428,23 +428,23 @@ function render() {
   document.getElementById('main').innerHTML = `
     <div class="kpi-row">
       <div class="kpi red">
-        <div class="kpi-label">เธเธเธเธฑเธเธซเธฒ / เนเธกเนเธเนเธฒเธ</div>
+        <div class="kpi-label">พบปัญหา / ไม่ผ่าน</div>
         <div class="kpi-value">${badRows.length}</div>
-        <div class="kpi-sub">เธฃเธฒเธขเธเธฒเธฃ</div>
+        <div class="kpi-sub">รายการ</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">เธฃเธฒเธขเธเธฒเธฃเธ•เธฃเธงเธ</div>
+        <div class="kpi-label">รายการตรวจ</div>
         <div class="kpi-value">${rows.length}</div>
-        <div class="kpi-sub">เธ—เธธเธเธซเธกเธงเธ”</div>
+        <div class="kpi-sub">ทุกหมวด</div>
       </div>
       <div class="kpi green">
-        <div class="kpi-label">เธเธธเธ”เธเธฑเธเธซเธฒเธกเธฒเธเธชเธธเธ”</div>
-        ${worst ? `<div class="kpi-value" style="font-size:15px;padding-top:4px">${worst[0]}</div><div class="kpi-sub">${worst[1]} เธเธฃเธฑเนเธ</div>` : '<div class="kpi-sub" style="padding-top:10px">โ€”</div>'}
+        <div class="kpi-label">จุดปัญหามากสุด</div>
+        ${worst ? `<div class="kpi-value" style="font-size:15px;padding-top:4px">${worst[0]}</div><div class="kpi-sub">${worst[1]} ครั้ง</div>` : '<div class="kpi-sub" style="padding-top:10px">—</div>'}
       </div>
       <div class="kpi amber">
-        <div class="kpi-label">เธเธนเนเธ•เธฃเธงเธ</div>
+        <div class="kpi-label">ผู้ตรวจ</div>
         <div class="kpi-value">${guards.size}</div>
-        <div class="kpi-sub">เธเธ / ${dayCount} เธงเธฑเธ</div>
+        <div class="kpi-sub">คน / ${dayCount} วัน</div>
       </div>
     </div>
 
@@ -452,35 +452,35 @@ function render() {
 
     <div class="chart-row">
       <div class="card">
-        <div class="card-head">เธเธฑเธเธซเธฒเนเธ•เนเธฅเธฐเนเธเธ <span class="click-hint">โ€” เธเธฅเธดเธเนเธ—เนเธเน€เธเธทเนเธญเธ”เธนเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”</span></div>
+        <div class="card-head">ปัญหาแต่ละโซน <span class="click-hint">— คลิกแท่งเพื่อดูรายละเอียด</span></div>
         <div class="chart-wrap"><canvas id="chartZone"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-head">เนเธเธงเนเธเนเธกเธฃเธฒเธขเธงเธฑเธ <span class="card-head-note">เธ—เธธเธเธงเธฑเธเธ—เธตเนเธกเธตเธเนเธญเธกเธนเธฅ</span></div>
+        <div class="card-head">แนวโน้มรายวัน <span class="card-head-note">ทุกวันที่มีข้อมูล</span></div>
         <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-head">${hmTitle} <span class="card-head-note">โ€” เธเธฅเธดเธเธเนเธญเธเน€เธเธทเนเธญเธ”เธนเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”</span></div>
+      <div class="card-head">${hmTitle} <span class="card-head-note">— คลิกช่องเพื่อดูรายละเอียด</span></div>
       <div id="heatmapWrap"></div>
     </div>
 
     <div class="card">
-      <div class="card-head">${roundTitle} <span class="card-head-note">โ“ = เธชเนเธเธเนเธญเธกเธนเธฅเนเธฅเนเธง</span></div>
+      <div class="card-head">${roundTitle} <span class="card-head-note">✓ = ส่งข้อมูลแล้ว</span></div>
       <div id="roundCompletion"></div>
     </div>
 
     <div class="card">
       <div class="card-head">
         ${repeatTitle}
-        <span class="card-head-note">เธฃเธงเธกเธ—เธธเธเธงเธฑเธ โ€” เธเธฅเธดเธเนเธ–เธงเน€เธเธทเนเธญเธ”เธนเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”</span>
+        <span class="card-head-note">รวมทุกวัน — คลิกแถวเพื่อดูรายละเอียด</span>
       </div>
       <div class="tbl-wrap" id="tblRepeat"></div>
     </div>
 
     <div class="card">
-      <div class="card-head">เธชเธ–เธดเธ•เธดเธเธนเนเธ•เธฃเธงเธ <span class="click-hint">โ€” เธเธฅเธดเธเนเธ–เธงเน€เธเธทเนเธญเธ”เธนเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”</span></div>
+      <div class="card-head">สถิติผู้ตรวจ <span class="click-hint">— คลิกแถวเพื่อดูรายละเอียด</span></div>
       <div class="tbl-wrap" id="tblGuard"></div>
     </div>
   `;
@@ -493,14 +493,14 @@ function render() {
   renderGuardTable(rows);
 }
 
-// โ”€โ”€ Zone chart โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ── Zone chart ────────────────────────────────
 function renderZoneChart(badRows, allRows) {
   const cnt = {};
   badRows.forEach(r=>{ if(r[C.location]) cnt[r[C.location]]=(cnt[r[C.location]]||0)+1; });
   const sorted = Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
 
   if (!sorted.length) {
-    document.getElementById('chartZone').closest('.chart-wrap').innerHTML='<div class="msg">เนเธกเนเธเธเธเนเธญเธกเธนเธฅเธเธฑเธเธซเธฒ</div>';
+    document.getElementById('chartZone').closest('.chart-wrap').innerHTML='<div class="msg">ไม่พบข้อมูลปัญหา</div>';
     return;
   }
   charts.zone = new Chart(document.getElementById('chartZone').getContext('2d'), {
@@ -511,7 +511,7 @@ function renderZoneChart(badRows, allRows) {
       borderRadius:3, borderSkipped:false }] },
     options:{
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.parsed.x} เธเธฃเธฑเนเธ`}} },
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.parsed.x} ครั้ง`}} },
       scales:{ x:{ticks:{stepSize:1,font:{size:11}},grid:{color:'#F0EDE7'}}, y:{ticks:{font:{size:11}},grid:{display:false}} },
       onClick(evt, elements) {
         if (!elements.length) return;
@@ -519,13 +519,13 @@ function renderZoneChart(badRows, allRows) {
         const dateVal = document.getElementById('dateFilter').value;
         const zoneRows = allData.filter(r=>isProblem(r)&&r[C.location]===zone&&(!dateVal||r._d===dateVal))
           .sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
-        openModal(zone, `เธเธเธเธฑเธเธซเธฒ ${zoneRows.length} เธฃเธฒเธขเธเธฒเธฃ`, zoneRows);
+        openModal(zone, `พบปัญหา ${zoneRows.length} รายการ`, zoneRows);
       }
     }
   });
 }
 
-// โ”€โ”€ Trend chart โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ── Trend chart ───────────────────────────────
 function renderTrendChart() {
   const cnt = {};
   allData.filter(isProblem).forEach(r=>{ if(r._d) cnt[r._d]=(cnt[r._d]||0)+1; });
@@ -538,50 +538,50 @@ function renderTrendChart() {
       pointRadius:5, pointBackgroundColor:'#1B5E3B', pointBorderColor:'#fff', pointBorderWidth:2, pointHoverRadius:7 }] },
     options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.parsed.y} เธเธฃเธฑเนเธ`}} },
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.parsed.y} ครั้ง`}} },
       scales:{ y:{beginAtZero:true,ticks:{stepSize:1,font:{size:11}},grid:{color:'#F0EDE7'}}, x:{ticks:{font:{size:10}},grid:{display:false}} },
       onClick(evt, elements) {
         if (!elements.length) return;
         const dateKey = sorted[elements[0].index][0];
         const dayRows = allData.filter(r=>isProblem(r)&&r._d===dateKey)
           .sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
-        openModal(displayDate(dateKey), `เธเธเธเธฑเธเธซเธฒ ${dayRows.length} เธฃเธฒเธขเธเธฒเธฃ`, dayRows);
+        openModal(displayDate(dateKey), `พบปัญหา ${dayRows.length} รายการ`, dayRows);
       }
     }
   });
 }
 
-// โ”€โ”€ Section summary click โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ── Section summary click ─────────────────────
 function showSectionDetail(secKey, secLabel) {
   const dateVal = document.getElementById('dateFilter').value;
   const sRows = allData.filter(r=>r[C.section]===secKey&&(!dateVal||r._d===dateVal))
-    .sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
-  openModal(secLabel, `${sRows.length} เธฃเธฒเธขเธเธฒเธฃ`, sRows);
+    .sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||'''));
+  openModal(secLabel, `${sRows.length} รายการ`, sRows);
 }
 
-// โ”€โ”€ Heatmap: section-aware dispatcher โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ── Heatmap: section-aware dispatcher ────────
 function renderHeatmap(rows) {
   const secFilter = document.getElementById('sectionFilter').value;
   const el = document.getElementById('heatmapWrap');
-  if (!secFilter || secFilter === '1. เธ•เธฃเธงเธเธฃเธธเธเธฅเนเธณ') {
+  if (!secFilter || secFilter === '1. ตรวจรุกล้ำ') {
     renderHeatmapEnc(rows, el);
-  } else if (secFilter === '2. เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”') {
-    renderHeatmapItems(rows, el, '2. เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”', KNOWN_ZONES2, KNOWN_ITEMS2, 'เนเธกเนเธเนเธฒเธ', 'เธเนเธฒเธ', 'เนเธกเนเธเนเธฒเธ');
+  } else if (secFilter === '2. ตรวจความสะอาด') {
+    renderHeatmapItems(rows, el, '2. ตรวจความสะอาด', KNOWN_ZONES2, KNOWN_ITEMS2, 'ไม่ผ่าน', 'ผ่าน', 'ไม่ผ่า');
   } else {
-    renderHeatmapItems(rows, el, '3. เธ•เธฃเธงเธเธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ', KNOWN_ZONES3, KNOWN_ITEMS3, 'เธเธดเธ”เธเธเธ•เธด', 'เธเธเธ•เธด', 'เธเธดเธ”เธเธเธ•เธด');
+    renderHeatmapItems(rows, el, '3. ตรวจบัตรสมาชิก', KNOWN_ZONES3, KNOWN_ITEMS3, 'ผ');
   }
 }
 
-// โ”€โ”€ Heatmap: zone ร— round (encroachment) โ”€โ”€โ”€โ”€โ”€
+// ── Heatmap: zone × round (encroachment) ─────
 function renderHeatmapEnc(rows, el) {
-  const encRows = rows.filter(r => r[C.section] === '1. เธ•เธฃเธงเธเธฃเธธเธเธฅเนเธณ');
+  const encRows = rows.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
   const zones  = KNOWN_ZONES;
   const rounds = KNOWN_ROUNDS;
 
   const lookup = {};
   encRows.forEach(r => {
     const t = itemTime(r[C.item]); const z = r[C.location];
-    if (t === 'โ€”' || !z) return;
+    if (t === '—' || !z) return;
     const k = z + '|' + t;
     if (!lookup[k]) lookup[k] = [];
     lookup[k].push(r);
@@ -596,11 +596,11 @@ function renderHeatmapEnc(rows, el) {
     rounds.forEach(time => {
       const k = zone + '|' + time;
       const cells = lookup[k] || [];
-      let cls = 'no-data', title = 'เนเธกเนเธกเธตเธเนเธญเธกเธนเธฅ', onclick = '';
+      let cls = 'no-data', title = 'ไม่มีข้อมูล', onclick = '';
       if (cells.length) {
-        const hasBad = cells.some(r => r[C.status] === 'เธเธเธเธฒเธฃเธฃเธธเธเธฅเนเธณ');
+        const hasBad = cells.some(r => r[C.status] === 'พบการรุกล้ำ');
         cls = hasBad ? 'bad' : 'ok';
-        title = hasBad ? 'เธเธเธฃเธธเธเธฅเนเธณ' : 'เนเธกเนเธเธ';
+        title = hasBad ? 'พบรุกล้ำ' : 'ไม่พบ';
         onclick = `onclick="openHmDetail('${k}')"`;
       }
       html += `<td><div class="hm-cell ${cls}" title="${title}" ${onclick}></div></td>`;
@@ -608,11 +608,15 @@ function renderHeatmapEnc(rows, el) {
     html += '</tr>';
   });
 
+  html += `</tbody></tabl    });
+    html += '</tr>';
+  });
+
   html += `</tbody></table>
     <div class="hm-legend">
-      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#F0EDE7"></span>เนเธกเนเธกเธตเธเนเธญเธกเธนเธฅ</div>
-      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#81C784"></span>เนเธกเนเธเธ</div>
-      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#EF5350"></span>เธเธเธฃเธธเธเธฅเนเธณ</div>
+      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#F0EDE7"></span>ไม่มีข้อมูล</div>
+      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#81C784"></span>ไม่พบ</div>
+      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#EF5350"></span>พบรุกล้ำ</div>
     </div></div>`;
 
   el.innerHTML = html;
@@ -621,15 +625,15 @@ function renderHeatmapEnc(rows, el) {
 function openHmDetail(key) {
   const rows = (window._hmLookup[key] || []).sort((a,b)=>(a[C.guard]||'').localeCompare(b[C.guard]||''));
   const [zone, time] = key.split('|');
-  openModal(`${zone} โ€” เธฃเธญเธ ${time}`, `${rows.length} เธฃเธฒเธขเธเธฒเธฃ`, rows);
+  openModal(`${zone} — รอบ ${time}`, `${rows.length} รายการ`, rows);
 }
 
-// โ”€โ”€ Heatmap: zone ร— item (เธเธงเธฒเธกเธชเธฐเธญเธฒเธ” / เธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ) โ”€โ”€
+// ── Heatmap: zone × item (ความสะอาด / บัตรสมาชิก) ──
 function renderHeatmapItems(rows, el, secKey, knownZones, knownItems, badStatus, okLabel, badLabel) {
-  const secRows = rows.filter(r => r[C.section] === secKey && r[C.item] !== 'เธซเธกเธฒเธขเน€เธซเธ•เธธเธฃเธงเธกเนเธเธ');
-  if (!secRows.length) { el.innerHTML = '<div class="msg">เนเธกเนเธกเธตเธเนเธญเธกเธนเธฅเนเธเธซเธกเธงเธ”เธเธตเน</div>'; return; }
+  const secRows = rows.filter(r => r[C.section] === secKey && r[C.item] !== 'หมายเหตุรวมโซน');
+  if (!secRows.length) { el.innerHTML = '<div class="msg">ไม่มีข้อมูลในหมวดนี้</div>'; return; }
 
-  // Build lookup: "zone|||item" โ’ rows[]
+  // Build lookup: "zone|||item" → rows[]
   window._hmCells = [];
   const lookup = {};
   secRows.forEach(r => {
@@ -642,7 +646,7 @@ function renderHeatmapItems(rows, el, secKey, knownZones, knownItems, badStatus,
 
   // Only show zones that appear in actual data (in KNOWN order)
   const activeZones = knownZones.filter(z => secRows.some(r => r[C.location] === z));
-  if (!activeZones.length) { el.innerHTML = '<div class="msg">เนเธกเนเธกเธตเธเนเธญเธกเธนเธฅเนเธเธซเธกเธงเธ”เธเธตเน</div>'; return; }
+  if (!activeZones.length) { el.innerHTML = '<div class="msg">ไม่มีข้อมูลในหมวดนี้</div>'; return; }
 
   let html = `<div class="heatmap-wrap"><table class="heatmap-table">
     <thead><tr><th></th>${knownItems.map(it => `<th title="${it.full}">${it.short}</th>`).join('')}</tr></thead>
@@ -653,13 +657,13 @@ function renderHeatmapItems(rows, el, secKey, knownZones, knownItems, badStatus,
     knownItems.forEach(it => {
       const k = zone + '|||' + it.full;
       const cells = lookup[k] || [];
-      let cls = 'no-data', title = 'เนเธกเนเธกเธตเธเนเธญเธกเธนเธฅ', onclick = '';
+      let cls = 'no-data', title = 'ไม่มีข้อมูล', onclick = '';
       if (cells.length) {
         const hasBad = cells.some(r => r[C.status] === badStatus);
         cls = hasBad ? 'bad' : 'ok';
         title = hasBad ? badLabel : okLabel;
         const idx = window._hmCells.length;
-        window._hmCells.push({label: `${zone} โ€” ${it.short}`, rows: cells});
+        window._hmCells.push({label: `${zone} — ${it.short}`, rows: cells});
         onclick = `onclick="openHmDetailIdx(${idx})"`;
       }
       html += `<td><div class="hm-cell ${cls}" title="${title}" ${onclick}></div></td>`;
@@ -669,7 +673,7 @@ function renderHeatmapItems(rows, el, secKey, knownZones, knownItems, badStatus,
 
   html += `</tbody></table>
     <div class="hm-legend">
-      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#F0EDE7"></span>เนเธกเนเธกเธตเธเนเธญเธกเธนเธฅ</div>
+      <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#F0EDE7"></span>ไม่มีข้อมูล</div>
       <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#81C784"></span>${okLabel}</div>
       <div class="hm-legend-item"><span class="hm-legend-swatch" style="background:#EF5350"></span>${badLabel}</div>
     </div></div>`;
@@ -679,40 +683,40 @@ function renderHeatmapItems(rows, el, secKey, knownZones, knownItems, badStatus,
 function openHmDetailIdx(idx) {
   const entry = (window._hmCells || [])[idx];
   if (!entry) return;
-  openModal(entry.label, `${entry.rows.length} เธฃเธฒเธขเธเธฒเธฃ`, entry.rows.slice().sort((a,b)=>(a[C.guard]||'').localeCompare(b[C.guard]||'')));
+  openModal(entry.label, `${entry.rows.length} รายการ`, entry.rows.slice().sort((a,b)=>(a[C.guard]||'').localeCompare(b[C.guard]||'')));
 }
 
-// โ”€โ”€ Round completion: section-aware dispatcher โ”€
+// ── Round completion: section-aware dispatcher ─
 function renderRoundCompletion(rows) {
   const secFilter = document.getElementById('sectionFilter').value;
   const el = document.getElementById('roundCompletion');
-  if (!secFilter || secFilter === '1. เธ•เธฃเธงเธเธฃเธธเธเธฅเนเธณ') {
+  if (!secFilter || secFilter === '1. ตรวจรุกล้ำ') {
     renderRoundCompletionEnc(rows, el);
-  } else if (secFilter === '2. เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”') {
-    renderRoundCompletionByZone(rows, el, '2. เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”', KNOWN_ZONES2);
+  } else if (secFilter === '2. ตรวจความสะอาด') {
+    renderRoundCompletionByZone(rows, el, '2. ตรวจความสะอาด', KNOWN_ZONES2);
   } else {
-    renderRoundCompletionByZone(rows, el, '3. เธ•เธฃเธงเธเธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ', KNOWN_ZONES3);
+    renderRoundCompletionByZone(rows, el, '3. ตรวจบัตรสมาชิก', KNOWN_ZONES3);
   }
 }
 
-// โ”€โ”€ Round completion: guard ร— round (เธฃเธธเธเธฅเนเธณ) โ”€โ”€
+// ── Round completion: guard × round (รุกล้ำ) ──
 function renderRoundCompletionEnc(rows, el) {
-  const encRows = rows.filter(r => r[C.section] === '1. เธ•เธฃเธงเธเธฃเธธเธเธฅเนเธณ');
+  const encRows = rows.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
   const rounds  = KNOWN_ROUNDS;
   const guards  = [...new Set(encRows.map(r => r[C.guard]).filter(Boolean))].sort();
 
-  if (!guards.length) { el.innerHTML = '<div class="msg">เนเธกเนเธกเธตเธเนเธญเธกเธนเธฅ</div>'; return; }
+  if (!guards.length) { el.innerHTML = '<div class="msg">ไม่มีข้อมูล</div>'; return; }
 
   const guardRounds = {};
   encRows.forEach(r => {
     const g = r[C.guard]; const t = itemTime(r[C.item]);
-    if (!g || t === 'โ€”') return;
+    if (!g || t === '—') return;
     if (!guardRounds[g]) guardRounds[g] = new Set();
     guardRounds[g].add(t);
   });
 
   let html = `<div class="heatmap-wrap"><table class="round-table">
-    <thead><tr><th style="text-align:left">เธฃเธเธ .</th>${rounds.map(t=>`<th>${t}</th>`).join('')}<th>เธฃเธงเธก</th></tr></thead>
+    <thead><tr><th style="text-align:left">รปภ.</th>${rounds.map(t=>`<th>${t}</th>`).join('')}<th>รวม</th></tr></thead>
     <tbody>`;
 
   guards.forEach(guard => {
@@ -722,7 +726,7 @@ function renderRoundCompletionEnc(rows, el) {
     const tagCls = pct === 100 ? 'tag-green' : pct >= 50 ? 'tag-amber' : 'tag-red';
     html += `<tr><td class="guard-name">${guard}</td>`;
     rounds.forEach(t => {
-      html += `<td><div class="round-cell ${done.has(t) ? 'done' : 'miss'}">${done.has(t) ? 'โ“' : ''}</div></td>`;
+      html += `<td><div class="round-cell ${done.has(t) ? 'done' : 'miss'}">${done.has(t) ? '✓' : ''}</div></td>`;
     });
     html += `<td><span class="tag ${tagCls}">${count}/${rounds.length}</span></td></tr>`;
   });
@@ -731,10 +735,10 @@ function renderRoundCompletionEnc(rows, el) {
   el.innerHTML = html;
 }
 
-// โ”€โ”€ Round completion: guard ร— zone (เธเธงเธฒเธกเธชเธฐเธญเธฒเธ” / เธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ) โ”€โ”€
+// ── Round completion: guard × zone (ความสะอาด / บัตรสมาชิก) ──
 function renderRoundCompletionByZone(rows, el, secKey, knownZones) {
-  const secRows = rows.filter(r => r[C.section] === secKey && r[C.item] !== 'เธซเธกเธฒเธขเน€เธซเธ•เธธเธฃเธงเธกเนเธเธ');
-  if (!secRows.length) { el.innerHTML = '<div class="msg">เนเธกเนเธกเธตเธเนเธญเธกเธนเธฅ</div>'; return; }
+  const secRows = rows.filter(r => r[C.section] === secKey && r[C.item] !== 'หมายเหตุรวมโซน');
+  if (!secRows.length) { el.innerHTML = '<div class="msg">ไม่มีข้อมูล</div>'; return; }
 
   const guards = [...new Set(secRows.map(r => r[C.guard]).filter(Boolean))].sort();
   const zones  = knownZones.filter(z => secRows.some(r => r[C.location] === z));
@@ -747,11 +751,11 @@ function renderRoundCompletionByZone(rows, el, secKey, knownZones) {
     guardZones[g].add(z);
   });
 
-  // Shorten zone label for header (remove เนเธเธ prefix)
-  const shortZone = z => z.replace(/^เนเธเธ/, '');
+  // Shorten zone label for header (remove โซน prefix)
+  const shortZone = z => z.replace(/^โซน/, '');
 
   let html = `<div class="heatmap-wrap"><table class="round-table">
-    <thead><tr><th style="text-align:left">เธฃเธเธ .</th>${zones.map(z=>`<th title="${z}">${shortZone(z)}</th>`).join('')}<th>เธฃเธงเธก</th></tr></thead>
+    <thead><tr><th style="text-align:left">รปภ.</th>${zones.map(z=>`<th title="${z}">${shortZone(z)}</th>`).join('')}<th>รวม</th></tr></thead>
     <tbody>`;
 
   guards.forEach(guard => {
@@ -761,7 +765,7 @@ function renderRoundCompletionByZone(rows, el, secKey, knownZones) {
     const tagCls = pct === 100 ? 'tag-green' : pct >= 50 ? 'tag-amber' : 'tag-red';
     html += `<tr><td class="guard-name">${guard}</td>`;
     zones.forEach(z => {
-      html += `<td><div class="round-cell ${done.has(z) ? 'done' : 'miss'}">${done.has(z) ? 'โ“' : ''}</div></td>`;
+      html += `<td><div class="round-cell ${done.has(z) ? 'done' : 'miss'}">${done.has(z) ? '✓' : ''}</div></td>`;
     });
     html += `<td><span class="tag ${tagCls}">${count}/${zones.length}</span></td></tr>`;
   });
@@ -770,13 +774,13 @@ function renderRoundCompletionByZone(rows, el, secKey, knownZones) {
   el.innerHTML = html;
 }
 
-// โ”€โ”€ Repeat table: section-aware โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ── Repeat table: section-aware ───────────────
 function renderRepeatTable() {
   const secFilter = document.getElementById('sectionFilter').value;
-  if (secFilter === '2. เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”') {
-    renderRepeatTableItems('2. เธ•เธฃเธงเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ”', 'เนเธกเนเธเนเธฒเธ', 'เธฃเธฒเธขเธเธฒเธฃ');
-  } else if (secFilter === '3. เธ•เธฃเธงเธเธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ') {
-    renderRepeatTableItems('3. เธ•เธฃเธงเธเธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ', 'เธเธดเธ”เธเธเธ•เธด', 'เธฃเธฒเธขเธเธฒเธฃ');
+  if (secFilter === '2. ตรวจความสะอาด') {
+    renderRepeatTableItems('2. ตรวจความสะอาด', 'ไม่ผ่าน', 'รายการ');
+  } else if (secFilter === '3. ตรวจบัตรสมาชิก') {
+    renderRepeatTableItems('3. ตรวจบัตรสมาชิก', 'ผิดปกติ', 'รายการ');
   } else {
     renderRepeatTableEnc();
   }
@@ -784,7 +788,7 @@ function renderRepeatTable() {
 
 // Repeat table: encroachment (by shop note)
 function renderRepeatTableEnc() {
-  const encBad = allData.filter(r=>r[C.section]==='1. เธ•เธฃเธงเธเธฃเธธเธเธฅเนเธณ'&&r[C.status]==='เธเธเธเธฒเธฃเธฃเธธเธเธฅเนเธณ');
+  const encBad = allData.filter(r=>r[C.section]==='1. ตรวจรุกล้ำ'&&r[C.status]==='พบการรุกล้ำ');
   const map = {};
   encBad.forEach(r=>{
     const note=(r[C.note]||'').trim(); if(!note) return;
@@ -794,19 +798,19 @@ function renderRepeatTableEnc() {
   });
   const sorted=Object.values(map).sort((a,b)=>b.dates.size-a.dates.size);
   const el=document.getElementById('tblRepeat');
-  if(!sorted.length){ el.innerHTML='<div class="msg">เนเธกเนเธกเธตเธเนเธญเธกเธนเธฅ โ€” เธเธฃเธญเธเธเธทเนเธญเธฃเนเธฒเธเนเธเธเนเธญเธเธซเธกเธฒเธขเน€เธซเธ•เธธเนเธเนเธญเธเธ•เธฃเธงเธ</div>'; return; }
+  if(!sorted.length){ el.innerHTML='<div class="msg">ไม่มีข้อมูล — กรอกชื่อร้านในช่องหมายเหตุในแอปตรวจ</div>'; return; }
   el.innerHTML=`<table>
-    <thead><tr><th>เนเธเธ</th><th>เธฃเนเธฒเธเธเนเธฒ / เธซเธกเธฒเธขเน€เธซเธ•เธธ</th><th>เธเธเธเธตเนเธงเธฑเธ</th></tr></thead>
+    <thead><tr><th>โซน</th><th>ร้านค้า / หมายเหตุ</th><th>พบกี่วัน</th></tr></thead>
     <tbody>${sorted.map((v,i)=>`<tr class="clickable" onclick="showRepeatDetail(${i})">
       <td style="color:var(--sub);font-size:12px">${v.loc}</td>
       <td><strong>${v.label}</strong></td>
-      <td><span class="tag ${v.dates.size>=3?'tag-red':v.dates.size>=2?'tag-amber':'tag-gray'}">${v.dates.size} เธงเธฑเธ</span></td>
+      <td><span class="tag ${v.dates.size>=3?'tag-red':v.dates.size>=2?'tag-amber':'tag-gray'}">${v.dates.size} วัน</span></td>
     </tr>`).join('')}</tbody>
   </table>`;
   window._repeatData=sorted;
 }
 
-// Repeat table: เธเธงเธฒเธกเธชเธฐเธญเธฒเธ” / เธเธฑเธ•เธฃเธชเธกเธฒเธเธดเธ (by zone+item)
+// Repeat table: ความสะอาด / บัตรสมาชิก (by zone+item)
 function renderRepeatTableItems(secKey, badStatus, colLabel) {
   const bad = allData.filter(r=>r[C.section]===secKey&&r[C.status]===badStatus);
   const map = {};
@@ -817,13 +821,13 @@ function renderRepeatTableItems(secKey, badStatus, colLabel) {
   });
   const sorted=Object.values(map).sort((a,b)=>b.dates.size-a.dates.size||b.rows.length-a.rows.length);
   const el=document.getElementById('tblRepeat');
-  if(!sorted.length){ el.innerHTML='<div class="msg">เนเธกเนเธเธเธฃเธฒเธขเธเธฒเธฃเธ—เธตเนเธกเธตเธเธฑเธเธซเธฒ</div>'; return; }
+  if(!sorted.length){ el.innerHTML='<div class="msg">ไม่พบรายการที่มีปัญหา</div>'; return; }
   el.innerHTML=`<table>
-    <thead><tr><th>เนเธเธ</th><th>${colLabel}</th><th>เธเธเธเธตเนเธงเธฑเธ</th></tr></thead>
+    <thead><tr><th>โซน</th><th>${colLabel}</th><th>พบกี่วัน</th></tr></thead>
     <tbody>${sorted.map((v,i)=>`<tr class="clickable" onclick="showRepeatDetail(${i})">
       <td style="color:var(--sub);font-size:12px">${v.loc}</td>
       <td><strong>${v.label}</strong></td>
-      <td><span class="tag ${v.dates.size>=3?'tag-red':v.dates.size>=2?'tag-amber':'tag-gray'}">${v.dates.size} เธงเธฑเธ</span></td>
+      <td><span class="tag ${v.dates.size>=3?'tag-red':v.dates.size>=2?'tag-amber':'tag-gray'}">${v.dates.size} วัน</span></td>
     </tr>`).join('')}</tbody>
   </table>`;
   window._repeatData=sorted;
@@ -831,43 +835,14 @@ function renderRepeatTableItems(secKey, badStatus, colLabel) {
 
 function showRepeatDetail(idx){
   const v=window._repeatData[idx]; if(!v) return;
-  openModal(v.label, `${v.loc} โ€” เธเธ ${v.dates.size} เธงเธฑเธ / ${v.rows.length} เธฃเธฒเธขเธเธฒเธฃ`,
+  openModal(v.label, `${v.loc} — พบ ${v.dates.size} วัน / ${v.rows.length} รายการ`,
     v.rows.sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||'')));
 }
 
-// โ”€โ”€ Guard table โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ── Guard table ───────────────────────────────
 function renderGuardTable(rows){
   const stats={};
   rows.forEach(r=>{
     const g=(r[C.guard]||'').trim(); if(!g) return;
-    if(!stats[g]) stats[g]={name:g,total:0,dates:new Set(),problems:0,rows:[]};
-    stats[g].total++; stats[g].rows.push(r);
-    if(r._d) stats[g].dates.add(r._d);
-    if(isProblem(r)) stats[g].problems++;
-  });
-  const sorted=Object.values(stats).sort((a,b)=>b.total-a.total);
-  const el=document.getElementById('tblGuard');
-  if(!sorted.length){ el.innerHTML='<div class="msg">เนเธกเนเธกเธตเธเนเธญเธกเธนเธฅ</div>'; return; }
-  el.innerHTML=`<table>
-    <thead><tr><th>เธเธทเนเธญเธเธนเนเธ•เธฃเธงเธ</th><th>เธฃเธฒเธขเธเธฒเธฃเธ•เธฃเธงเธ</th><th>เธงเธฑเธเธ—เธตเนเธ•เธฃเธงเธ</th><th>เธเธเธเธฑเธเธซเธฒ</th></tr></thead>
-    <tbody>${sorted.map((v,i)=>`<tr class="clickable" onclick="showGuardDetail(${i})">
-      <td>${v.name}</td>
-      <td>${v.total} เธฃเธฒเธขเธเธฒเธฃ</td>
-      <td><span class="tag tag-green">${v.dates.size} เธงเธฑเธ</span></td>
-      <td><span class="tag ${v.problems>0?'tag-red':'tag-gray'}">${v.problems}</span></td>
-    </tr>`).join('')}</tbody>
-  </table>`;
-  window._guardData=sorted;
-}
-function showGuardDetail(idx){
-  const v=window._guardData[idx]; if(!v) return;
-  openModal(v.name, `เธ•เธฃเธงเธ ${v.total} เธฃเธฒเธขเธเธฒเธฃ / ${v.dates.size} เธงเธฑเธ`,
-    v.rows.sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||'')));
-}
-
-loadData();
-</script>
-</body>
-</html>
-
-
+    if(!i�х��m�t���х��m�t������霱ѽх������ѕ�鹕܁M�Р���ɽ��������ɽ���mu��(�����х��m�t�ѽх�����х��m�t�ɽ�̹��͠�Ȥ�(�������ȹ}����х��m�t���ѕ̹����ȹ}���(���������Aɽ�����Ȥ���х��m�t��ɽ����̬��(�����(������Ёͽ�ѕ��=����йم�Օ̡�х�̤�ͽ�Р���������ѽх����ѽх���(������Ё������յ��й���������	�%���щ�Յɐ���(������ͽ�ѕ������Ѡ�쁕�������!Q50���؁������͜�����⇂�#�⇂�ׂ���'�ⷂ⇂���𽑥����ɕ��ɸ��(����������!Q50���х����(�����ѡ���������Ѡ���+��߂�#�ⷂ�s����'��W�⏂⟂� �Ѡ��Ѡ��⏂�˂⋂���˂⏂�W�⏂⟂� �Ѡ��Ѡ��⟂�ǂ�g��_��ׂ�#��W�⏂⟂� �Ѡ��Ѡ���{��k��o��ǂ�7�⯂���Ѡ������ѡ����(�����щ������ͽ�ѕ�������ر�������ȁ�����􉍱�����������������͡��Յɑ�х����������(�������ѐ���ع������ѐ�(�������ѐ���عѽх��⏂�˂⋂���˂��ѐ�(�������ѐ�������������х��х���ɕ������ع��ѕ̹ͥ��⟂�ǂ�d�������ѐ�(�������ѐ�������������х����ع�ɽ���������х��ɕ���х���Ʌ�����ع�ɽ�������������ѐ�(���������������������щ����(���х������(��ݥ���ܹ}�Յɑ�ф�ͽ�ѕ��)�)�չ�ѥ���͡��Յɑ�х�������(������Ё��ݥ���ܹ}�Յɑ�хm���t쁥���ؤ�ɕ��ɸ�(������5�����ع���������W�⏂⟂� ���عѽх��⏂�˂⋂���˂⌀����ع��ѕ̹ͥ��⟂�ǂ�e��(����عɽ�̹ͽ�Р���������m���ѕu�𜜤�������
+����ɔ��m���ѕu�𜜤���)�()�����ф���(�͍ɥ���(𽉽���(�ѵ��(
