@@ -980,38 +980,6 @@ function printRepeatReport() {
   });
   html += `</tbody></table>`;
 
-  html += `<div class="page-break"></div>`;
-
-  // Details (ไส้ใน)
-  data.forEach(v => {
-    html += `<div class="section-title">${v.loc} — ${v.label} (พบ ${v.dates.size} วัน / ${v.rows.length} รายการ)</div>`;
-    html += `<table><thead><tr>
-      <th style="width:12%">วันที่</th>
-      <th style="width:10%">เวลา</th>
-      <th style="width:15%">ผู้ตรวจ</th>
-      <th style="width:15%">ผลตรวจ</th>
-      <th style="width:18%">หมายเหตุ</th>
-      <th style="width:30%">รูปภาพ</th>
-    </tr></thead><tbody>`;
-    
-    const sortedRows = v.rows.sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
-    sortedRows.forEach(r => {
-      const photos = [r[C.photo1], r[C.photo2]].filter(Boolean);
-      const photoHtml = photos.map(p => `<img src="${getImgSrc(p)}" class="photo" />`).join('');
-      const bad = isProblem(r);
-      
-      html += `<tr>
-        <td style="white-space:nowrap">${displayDate(r._d)}</td>
-        <td style="white-space:nowrap">${tsTime(r[C.timestamp]) !== '—' ? tsTime(r[C.timestamp]) : itemTime(r[C.item])}</td>
-        <td>${r[C.guard]||'—'}</td>
-        <td style="color:${bad?'#B71C1C':'#1B5E3B'}; font-weight:bold">${r[C.status]||'—'}</td>
-        <td>${r[C.note]||'—'}</td>
-        <td>${photoHtml||'—'}</td>
-      </tr>`;
-    });
-    html += `</tbody></table>`;
-  });
-
   html += `</body></html>`;
 
   const win = window.open('', '_blank');
