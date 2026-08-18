@@ -373,16 +373,8 @@ function printModalReport() {
   </tr></thead><tbody>`;
   
   rows.forEach(r => {
-const getImgSrc = (url) => {
-      if (!url) return '';
-      const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
-      if (m1) return `https://drive.google.com/uc?export=view&id=${m1[1]}`;
-      const m2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
-      if (m2) return `https://drive.google.com/uc?export=view&id=${m2[1]}`;
-      return url;
-    };
-    const photos = [r[C.photo1], r[C.photo2]].filter(Boolean);
-    const photoHtml = photos.map(p => `<img src="${getImgSrc(p)}" class="photo" onerror="this.style.display='none'" />`).join('');
+const photos = [r[C.photo1], r[C.photo2]].filter(Boolean);
+    const photoHtml = photos.map(p => `<img src="${getImgSrc(p)}" class="photo" />`).join('');
     const bad = isProblem(r);
     const encTag = r[C.encType] ? `<br><small style="color:#B86800">[${r[C.encType]}]</small>` : '';
     
@@ -400,9 +392,7 @@ const getImgSrc = (url) => {
   const win = window.open('', '_blank');
   win.document.write(html);
   win.document.close();
-  win.onload = function() {
-    setTimeout(() => { win.print(); }, 500);
-  };
+  printWhenReady(win);
 }
 
 function closeModal(e) { if (e.target===document.getElementById('modalOverlay')) closeModalDirect(); }
@@ -428,6 +418,38 @@ async function loadData() {
     document.getElementById('main').innerHTML =
       `<div class="msg-error">โหลดข้อมูลไม่ได้<br><small style="opacity:.7">${e.message}</small></div>`;
   }
+}
+
+
+// Transform Google Drive URLs to direct CDN URLs for <img> tags
+function getImgSrc(url) {
+  if (!url) return '';
+  const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
+  if (m1) return `https://lh3.googleusercontent.com/d/${m1[1]}`;
+  const m2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+  if (m2) return `https://lh3.googleusercontent.com/d/${m2[1]}`;
+  const m3 = url.match(/drive\.google\.com\/uc\?id=([^&]+)/);
+  if (m3) return `https://lh3.googleusercontent.com/d/${m3[1]}`;
+  return url;
+}
+
+// Helper to wait for images in print window
+function printWhenReady(win) {
+  win.document.close();
+  const imgs = Array.from(win.document.images);
+  let loaded = 0;
+  const tryPrint = () => {
+    if (loaded >= imgs.length) {
+      setTimeout(() => win.print(), 200);
+    }
+  };
+  if (imgs.length === 0) tryPrint();
+  imgs.forEach(img => {
+    if (img.complete) { loaded++; tryPrint(); }
+    else {
+      img.onload = img.onerror = () => { loaded++; tryPrint(); };
+    }
+  });
 }
 
 // ── Filter ────────────────────────────────────
@@ -975,7 +997,7 @@ function printRepeatReport() {
     const sortedRows = v.rows.sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
     sortedRows.forEach(r => {
       const photos = [r[C.photo1], r[C.photo2]].filter(Boolean);
-      const photoHtml = photos.map(p => `<img src="${p}" class="photo" />`).join('');
+      const photoHtml = photos.map(p => `<img src="${getImgSrc(p)}" class="photo" />`).join('');
       const bad = isProblem(r);
       
       html += `<tr>
@@ -995,9 +1017,7 @@ function printRepeatReport() {
   const win = window.open('', '_blank');
   win.document.write(html);
   win.document.close();
-  win.onload = function() {
-    setTimeout(() => { win.print(); }, 500);
-  };
+  printWhenReady(win);
 }
 
 // ── Guard table ───────────────────────────────
