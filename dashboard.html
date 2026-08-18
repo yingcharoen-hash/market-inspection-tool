@@ -694,8 +694,7 @@ function renderZoneChart(badRows, allRows) {
       onClick(evt, elements) {
         if (!elements.length) return;
         const zone = sorted[elements[0].index][0];
-        const dateVal = document.getElementById('dateFilter').value;
-        const zoneRows = allData.filter(r=>isProblem(r)&&r[C.location]===zone&&(!dateVal||r._d===dateVal))
+        const zoneRows = badRows.filter(r=>r[C.location]===zone)
           .sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
         openModal(zone, `พบปัญหา ${zoneRows.length} รายการ`, zoneRows);
       }
@@ -731,8 +730,7 @@ function renderTrendChart() {
 
 // ── Section summary click ─────────────────────
 function showSectionDetail(secKey, secLabel) {
-  const dateVal = document.getElementById('dateFilter').value;
-  const sRows = allData.filter(r=>r[C.section]===secKey&&(!dateVal||r._d===dateVal))
+  const sRows = getFiltered().filter(r=>r[C.section]===secKey)
     .sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
   openModal(secLabel, `${sRows.length} รายการ`, sRows);
 }
