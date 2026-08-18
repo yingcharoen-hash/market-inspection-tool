@@ -334,6 +334,14 @@ function openModal(title, sub, rows) {
   document.body.style.overflow = 'hidden';
 }
 
+function printSingleRepeatReport(idx) {
+  const v = window._repeatData[idx]; if (!v) return;
+  window._modalTitle = v.label;
+  window._modalSub = `${v.loc} — พบ ${v.dates.size} วัน / ${v.rows.length} รายการ`;
+  window._modalRows = v.rows.sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
+  printModalReport();
+}
+
 function printModalReport() {
   const rows = window._modalRows || [];
   if (!rows.length) return;
@@ -535,7 +543,12 @@ function render() {
       <div class="card-head">
         <div>
           ${repeatTitle}
-          <span class="card-head-note" style="display:block;margin-top:2px">คลิกแถวเพื่อดูรายละเอียด</span>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:5px;font-size:12px;font-weight:normal">
+            <span>จำนวนที่พบซ้ำ (วัน):</span>
+            <input type="number" id="repeatMin" style="width:40px;padding:2px" value="1" onchange="renderRepeatTable()">
+            <span>ถึง</span>
+            <input type="number" id="repeatMax" style="width:40px;padding:2px" value="99" onchange="renderRepeatTable()">
+          </div>
         </div>
         <button class="btn-refresh" style="background:var(--green);border-color:var(--green);" onclick="printRepeatReport()">🖨️ พิมพ์รายงาน</button>
       </div>
@@ -855,15 +868,20 @@ function renderRepeatTableEnc() {
     if(!map[key]) map[key]={loc:r[C.location],label:note,dates:new Set(),rows:[]};
     map[key].dates.add(r._d); map[key].rows.push(r);
   });
-  const sorted=Object.values(map).sort((a,b)=>b.dates.size-a.dates.size);
+  const minDays = parseInt(document.getElementById('repeatMin')?.value || '1', 10);
+  const maxDays = parseInt(document.getElementById('repeatMax')?.value || '99', 10);
+  const sorted=Object.values(map)
+    .filter(v => v.dates.size >= minDays && v.dates.size <= maxDays)
+    .sort((a,b)=>b.dates.size-a.dates.size);
   const el=document.getElementById('tblRepeat');
-  if(!sorted.length){ el.innerHTML='<div class="msg">ไม่มีข้อมูล — กรอกชื่อร้านในช่องหมายเหตุในแอปตรวจ</div>'; return; }
+  if(!sorted.length){ el.innerHTML='<div class="msg">ไม่มีข้อมูลตรงตามเงื่อนไขที่เลือก</div>'; return; }
   el.innerHTML=`<table>
-    <thead><tr><th>โซน</th><th>ร้านค้า / หมายเหตุ</th><th>พบกี่วัน</th></tr></thead>
-    <tbody>${sorted.map((v,i)=>`<tr class="clickable" onclick="showRepeatDetail(${i})">
-      <td style="color:var(--sub);font-size:12px">${v.loc}</td>
-      <td><strong>${v.label}</strong></td>
-      <td><span class="tag ${v.dates.size>=3?'tag-red':v.dates.size>=2?'tag-amber':'tag-gray'}">${v.dates.size} วัน</span></td>
+    <thead><tr><th>โซน</th><th>ร้านค้า / หมายเหตุ</th><th>พบกี่วัน</th><th style="width:40px">พิมพ์</th></tr></thead>
+    <tbody>${sorted.map((v,i)=>`<tr>
+      <td class="clickable" onclick="showRepeatDetail(${i})" style="color:var(--sub);font-size:12px">${v.loc}</td>
+      <td class="clickable" onclick="showRepeatDetail(${i})"><strong>${v.label}</strong></td>
+      <td class="clickable" onclick="showRepeatDetail(${i})"><span class="tag ${v.dates.size>=3?'tag-red':v.dates.size>=2?'tag-amber':'tag-gray'}">${v.dates.size} วัน</span></td>
+      <td style="text-align:center"><button onclick="printSingleRepeatReport(${i})" style="cursor:pointer;background:none;border:none;font-size:16px" title="พิมพ์รายงานร้านนี้">🖨️</button></td>
     </tr>`).join('')}</tbody>
   </table>`;
   window._repeatData=sorted;
