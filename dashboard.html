@@ -166,8 +166,10 @@
 
 <div class="filterbar">
   <div class="fi">
-    <label>วันที่</label>
-    <select id="dateFilter" onchange="render()"><option value="">ทั้งหมด</option></select>
+    <label>ตั้งแต่วันที่</label>
+    <input type="date" id="dateStart" onchange="render()">
+    <label>ถึง</label>
+    <input type="date" id="dateEnd" onchange="render()">
   </div>
   <div class="fi">
     <label>หมวด</label>
@@ -337,12 +339,9 @@ async function loadData() {
     const json = await res.json();
     allData = (json.rows||[]).filter(r=>r&&r[C.date]).map(r=>({...r, _d:toThaiDate(r[C.date])}));
 
-    const dates = [...new Set(allData.map(r=>r._d))].filter(Boolean).sort().reverse();
-    const sel = document.getElementById('dateFilter');
-    sel.innerHTML = '<option value="">ทั้งหมด</option>';
-    dates.forEach(d => { const o=document.createElement('option'); o.value=d; o.textContent=displayDate(d); sel.appendChild(o); });
     const today = todayThai();
-    sel.value = dates.includes(today) ? today : (dates[0]||'');
+    document.getElementById('dateStart').value = today;
+    document.getElementById('dateEnd').value = today;
 
     document.getElementById('lastUpdate').textContent =
       'อัปเดต ' + new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'});
@@ -355,11 +354,13 @@ async function loadData() {
 
 // ── Filter ────────────────────────────────────
 function getFiltered() {
-  const date = document.getElementById('dateFilter').value;
-  const sec  = document.getElementById('sectionFilter').value;
+  const dateStart = document.getElementById('dateStart').value;
+  const dateEnd   = document.getElementById('dateEnd').value;
+  const sec       = document.getElementById('sectionFilter').value;
   return allData.filter(r => {
-    if (date && r._d         !== date) return false;
-    if (sec  && r[C.section] !== sec)  return false;
+    if (dateStart && r._d < dateStart) return false;
+    if (dateEnd   && r._d > dateEnd)   return false;
+    if (sec       && r[C.section] !== sec)  return false;
     return true;
   });
 }
@@ -470,8 +471,11 @@ function render() {
 
     <div class="card">
       <div class="card-head">
-        ${repeatTitle}
-        <span class="card-head-note">รวมทุกวัน — คลิกแถวเพื่อดูรายละเอียด</span>
+        <div>
+          ${repeatTitle}
+          <span class="card-head-note" style="display:block;margin-top:2px">คลิกแถวเพื่อดูรายละเอียด</span>
+        </div>
+        <button class="btn-refresh" style="background:var(--green);border-color:var(--green);" onclick="printRepeatReport()">🖨️ พิมพ์รายงาน</button>
       </div>
       <div class="tbl-wrap" id="tblRepeat"></div>
     </div>
@@ -830,6 +834,82 @@ function showRepeatDetail(idx){
   const v=window._repeatData[idx]; if(!v) return;
   openModal(v.label, `${v.loc} — พบ ${v.dates.size} วัน / ${v.rows.length} รายการ`,
     v.rows.sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||'')));
+}
+
+function printRepeatReport() {
+  const secFilter = document.getElementById('sectionFilter').value || 'รวมทุกหมวด';
+  const start = document.getElementById('dateStart').value;
+  const end = document.getElementById('dateEnd').value;
+  const dateRange = (start || end) ? `วันที่ ${displayDate(start)||'เริ่มต้น'} ถึง ${displayDate(end)||'ปัจจุบัน'}` : 'ทุกวัน';
+  const data = window._repeatData || [];
+  
+  if (!data.length) { alert('ไม่มีข้อมูลสำหรับพิมพ์รายงาน'); return; }
+
+  let html = `<html><head><title>รายงานร้านค้า/จุดที่พบซ้ำ</title>
+  <style>
+    body { font-family: sans-serif; font-size: 13px; line-height: 1.5; color: #333; margin: 40px; }
+    h2 { text-align: center; margin-bottom: 5px; }
+    .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 12px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f5f5f5; font-weight: bold; }
+    .section-title { font-size: 16px; font-weight: bold; margin-top: 30px; margin-bottom: 10px; border-bottom: 2px solid #1B5E3B; padding-bottom: 5px; color: #1B5E3B; }
+    .photo { max-width: 150px; max-height: 150px; border-radius: 4px; border: 1px solid #eee; margin: 2px; }
+    .page-break { page-break-before: always; }
+    @media print { body { margin: 0; } }
+  </style></head><body>`;
+
+  html += `<h2>รายงานร้านค้า / จุดที่พบซ้ำ (${secFilter})</h2>`;
+  html += `<div class="subtitle">${dateRange}</div>`;
+
+  // Summary Table (ด้านหน้า)
+  html += `<table><thead><tr><th style="width:20%">โซน</th><th style="width:40%">รายการ/หมายเหตุ</th><th style="width:15%">พบกี่วัน</th><th style="width:25%">วันที่พบล่าสุด</th></tr></thead><tbody>`;
+  data.forEach(v => {
+    const latestDate = [...v.dates].sort().reverse()[0];
+    html += `<tr><td>${v.loc}</td><td><strong>${v.label}</strong></td><td>${v.dates.size} วัน</td><td>${displayDate(latestDate)}</td></tr>`;
+  });
+  html += `</tbody></table>`;
+
+  html += `<div class="page-break"></div>`;
+
+  // Details (ไส้ใน)
+  data.forEach(v => {
+    html += `<div class="section-title">${v.loc} — ${v.label} (พบ ${v.dates.size} วัน / ${v.rows.length} รายการ)</div>`;
+    html += `<table><thead><tr>
+      <th style="width:12%">วันที่</th>
+      <th style="width:10%">เวลา</th>
+      <th style="width:15%">ผู้ตรวจ</th>
+      <th style="width:15%">ผลตรวจ</th>
+      <th style="width:18%">หมายเหตุ</th>
+      <th style="width:30%">รูปภาพ</th>
+    </tr></thead><tbody>`;
+    
+    const sortedRows = v.rows.sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
+    sortedRows.forEach(r => {
+      const photos = [r[C.photo1], r[C.photo2]].filter(Boolean);
+      const photoHtml = photos.map(p => `<img src="${p}" class="photo" />`).join('');
+      const bad = isProblem(r);
+      
+      html += `<tr>
+        <td style="white-space:nowrap">${displayDate(r._d)}</td>
+        <td style="white-space:nowrap">${tsTime(r[C.timestamp]) !== '—' ? tsTime(r[C.timestamp]) : itemTime(r[C.item])}</td>
+        <td>${r[C.guard]||'—'}</td>
+        <td style="color:${bad?'#B71C1C':'#1B5E3B'}; font-weight:bold">${r[C.status]||'—'}</td>
+        <td>${r[C.note]||'—'}</td>
+        <td>${photoHtml||'—'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+  });
+
+  html += `</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.onload = function() {
+    setTimeout(() => { win.print(); }, 500);
+  };
 }
 
 // ── Guard table ───────────────────────────────
