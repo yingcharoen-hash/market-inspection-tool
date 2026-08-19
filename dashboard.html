@@ -315,13 +315,14 @@ function openModal(title, sub, rows) {
     document.getElementById('modalBody').innerHTML = '<div class="msg">ไม่มีข้อมูล</div>';
   } else {
     document.getElementById('modalBody').innerHTML = `<table>
-      <thead><tr><th>วันที่</th><th>เวลา</th><th>ผู้ตรวจ</th><th>หมวด</th><th>รายการ</th><th>ผลตรวจ</th><th>หมายเหตุ</th><th>รูป</th></tr></thead>
-      <tbody>${rows.map(r => {
+      <thead><tr><th style="width:30px;text-align:center"><input type="checkbox" id="chkAllModal" checked onchange="document.querySelectorAll(\'.print-chk\').forEach(c=>c.checked=this.checked)"></th><th>วันที่</th><th>เวลา</th><th>ผู้ตรวจ</th><th>หมวด</th><th>รายการ</th><th>ผลตรวจ</th><th>หมายเหตุ</th><th>รูป</th></tr></thead>
+      <tbody>${rows.map((r, idx) => {
         const photos = [r[C.photo1],r[C.photo2]].filter(Boolean);
         const photoHtml = photos.map((p,i)=>`<a href="${p}" target="_blank" class="photo-link">รูป${i+1}</a>`).join('');
         const bad = isProblem(r);
         const statusTag = `<span class="tag ${bad?'tag-red':'tag-gray'}">${r[C.status]||'—'}</span>`;
         return `<tr>
+          <td style="text-align:center"><input type="checkbox" class="print-chk" value="${idx}" checked></td>
           <td style="white-space:nowrap">${displayDate(r._d)}</td>
           <td style="white-space:nowrap;color:var(--sub)">${tsTime(r[C.timestamp]) !== '—' ? tsTime(r[C.timestamp]) : itemTime(r[C.item])}</td>
           <td style="white-space:nowrap">${r[C.guard]||'—'}</td>
