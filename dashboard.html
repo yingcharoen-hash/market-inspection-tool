@@ -668,7 +668,7 @@ function renderEncTypeChart(badRows) {
       },
       scales: {
         x: { grid: { display: false } },
-        y: { grid: { display: false }, border: { display: false }, ticks: { display: false } }
+        y: { grace: '15%', grid: { display: false }, border: { display: false }, ticks: { display: false } }
       },
       onClick: (e, els) => {
         if (!els.length) return;
@@ -703,7 +703,7 @@ function renderZoneChart(badRows, allRows) {
         tooltip:{callbacks:{label:c=>` ${c.parsed.x} ครั้ง`}},
         datalabels: { color: '#333', anchor: 'end', align: 'right', offset: 4, font: { weight: 'bold', size: 11 }, formatter: v => v + ' รายการ' }
       },
-      scales:{ x:{ticks:{stepSize:1,font:{size:11}},grid:{color:'#F0EDE7'}}, y:{ticks:{font:{size:11}},grid:{display:false}} },
+      scales:{ x:{grace: '15%', ticks:{stepSize:1,font:{size:11}},grid:{color:'#F0EDE7'}}, y:{ticks:{font:{size:11}},grid:{display:false}} },
       onClick(evt, elements) {
         if (!elements.length) return;
         const zone = sorted[elements[0].index][0];
