@@ -348,10 +348,22 @@ function printSingleRepeatReport(idx) {
 }
 
 function printModalReport() {
-  const rows = window._modalRows || [];
+  let rows = window._modalRows || [];
   if (!rows.length) return;
   const title = window._modalTitle || '';
   const sub = window._modalSub || '';
+
+  if (document.getElementById('modalOverlay').classList.contains('open')) {
+    const chks = document.querySelectorAll('.print-chk');
+    if (chks.length > 0) {
+      const selectedIdxs = Array.from(chks).filter(c=>c.checked).map(c=>parseInt(c.value, 10));
+      if (selectedIdxs.length === 0) {
+        alert('กรุณาเลือกอย่างน้อย 1 รายการเพื่อพิมพ์');
+        return;
+      }
+      rows = selectedIdxs.map(i => window._modalRows[i]);
+    }
+  }
 
   let html = `<html><head><title>รายงาน ${title}</title>
   <style>
