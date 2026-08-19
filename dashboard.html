@@ -252,6 +252,7 @@ const SECTIONS = [
   { key: '3. ตรวจบัตรสมาชิก',  label: 'ตรวจบัตรสมาชิก', cls: 'card2' },
 ];
 
+Chart.register(ChartDataLabels);
 let allData = [];
 let charts  = {};
 
@@ -663,7 +664,7 @@ function renderEncTypeChart(badRows) {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        datalabels: { color: '#B71C1C', anchor: 'end', align: 'top', offset: 2, font: { weight: 'bold', size: 12 } }
+        datalabels: { color: '#B71C1C', anchor: 'end', align: 'top', offset: 2, font: { weight: 'bold', size: 12 }, formatter: v => v + ' รายการ' }
       },
       scales: {
         x: { grid: { display: false } },
@@ -700,7 +701,7 @@ function renderZoneChart(badRows, allRows) {
       plugins:{ 
         legend:{display:false}, 
         tooltip:{callbacks:{label:c=>` ${c.parsed.x} ครั้ง`}},
-        datalabels: { color: '#333', anchor: 'end', align: 'right', offset: 4, font: { weight: 'bold', size: 11 } }
+        datalabels: { color: '#333', anchor: 'end', align: 'right', offset: 4, font: { weight: 'bold', size: 11 }, formatter: v => v + ' รายการ' }
       },
       scales:{ x:{ticks:{stepSize:1,font:{size:11}},grid:{color:'#F0EDE7'}}, y:{ticks:{font:{size:11}},grid:{display:false}} },
       onClick(evt, elements) {
