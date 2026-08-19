@@ -662,6 +662,7 @@ function renderEncTypeChart(badRows) {
     },
     options: {
       responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 30 } },
       plugins: {
         legend: { display: false },
         datalabels: { color: '#B71C1C', anchor: 'end', align: 'top', offset: 2, font: { weight: 'bold', size: 12 }, formatter: v => v + ' รายการ' }
@@ -698,6 +699,7 @@ function renderZoneChart(badRows, allRows) {
       borderRadius:3, borderSkipped:false }] },
     options:{
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      layout: { padding: { right: 60 } },
       plugins:{ 
         legend:{display:false}, 
         tooltip:{callbacks:{label:c=>` ${c.parsed.x} ครั้ง`}},
