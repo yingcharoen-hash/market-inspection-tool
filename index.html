@@ -920,7 +920,7 @@ function renderEncroachmentForm(idx) {
 
   const typeSelect = document.createElement("select");
   typeSelect.className = "note-input";
-  const types = ["", "วางสินค้าล้ำเส้น", "วางของบนทางเดิน", "ต่อเติมแผง", "อื่นๆ"];
+  const types = ["", "วางสินค้าเพื่อขาย", "รับฝากสินค้าจากลูกค้า", "โหลดสินค้าขึ้นแผงค้า", "วางวัสดุอุปกรณ์รุกล้ำ"];
   types.forEach(t=>{
     const opt = document.createElement("option");
     opt.value = t; opt.textContent = t?t:"-- เลือกประเภท --";
