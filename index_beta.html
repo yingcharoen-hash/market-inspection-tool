@@ -689,7 +689,9 @@ function createPhotoSlot(labelText, dataUrl, onChange){
 
 /* ========================= RENDER TAB 1 ========================= */
 function renderTab1(){
-  const wrap = document.getElementById("tab1Wrap");
+  const wrap = document.getElementById("zonesContainer1");
+  const zs = document.getElementById("zoneSelect1");
+  if(zs) zs.style.display = "none";
   wrap.innerHTML = "";
 
   if(!state._currentRound1) state._currentRound1 = ROUNDS[0];
@@ -863,7 +865,9 @@ function handleInlineShopSearch(idx, query) {
 
 function renderEncroachmentForm(idx) {
   const rec = state.tab1[idx];
-  const wrap = document.getElementById("tab1Wrap");
+  const wrap = document.getElementById("zonesContainer1");
+  const zs = document.getElementById("zoneSelect1");
+  if(zs) zs.style.display = "none";
   wrap.innerHTML = "";
 
   const backBtn = document.createElement("button");
