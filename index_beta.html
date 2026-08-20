@@ -708,7 +708,7 @@ function renderTab1(){
     btn.textContent = r;
     if (state._currentRound1 === r) {
       btn.style.backgroundColor = "var(--primary)";
-      btn.style.color = "white";
+      btn.style.color = "#111";
     }
     btn.onclick = () => {
       state._currentRound1 = r;
@@ -843,12 +843,8 @@ function handleInlineShopSearch(idx, query) {
       const mappedZ = localMapZone(z);
       if(!mappedZ) return;
       const zBtn = document.createElement('button');
-      zBtn.className = 'btn btn-outline';
-      zBtn.style.padding = '4px 8px';
-      zBtn.style.marginTop = '4px';
-      zBtn.style.marginRight = '4px';
-      zBtn.style.fontSize = '12px';
-      zBtn.textContent = mappedZ;
+      zBtn.style.cssText = 'background:#f0f0f0; border:1px solid #ddd; border-radius:12px; padding:4px 10px; font-size:12px; cursor:pointer; margin-top:4px; margin-right:4px;';
+      zBtn.textContent = "📍 " + mappedZ;
       zBtn.onclick = () => {
         state.tab1[idx].shopName = name;
         state.tab1[idx].zone = mappedZ;
@@ -885,7 +881,7 @@ function renderEncroachmentForm(idx) {
   title.textContent = "บันทึกข้อมูล (รอบ " + rec.round + ")";
   card.appendChild(title);
 
-  // Shop Search Input
+  // 1. Shop Search Input
   const box = document.createElement("div");
   box.className = "note-box";
   const label = document.createElement("label");
@@ -916,7 +912,30 @@ function renderEncroachmentForm(idx) {
     card.appendChild(zBox);
   }
 
-  // Encroachment Type
+  // 2. Status Switch
+  const sBox = document.createElement("div");
+  sBox.className = "note-box";
+  const sLabel = document.createElement("label");
+  sLabel.textContent = "สถานะการตรวจ";
+  sBox.appendChild(sLabel);
+  
+  const sSelect = document.createElement("select");
+  sSelect.className = "note-input";
+  const sOpts = [
+    {v:2, t:"รุกล้ำ"},
+    {v:1, t:"ตรวจแล้ว ไม่พบรุกล้ำ"}
+  ];
+  sOpts.forEach(o=>{
+    const opt = document.createElement("option");
+    opt.value = o.v; opt.textContent = o.t;
+    sSelect.appendChild(opt);
+  });
+  sSelect.value = rec.status;
+  sSelect.onchange = (e)=>{ rec.status=parseInt(e.target.value); saveState(); renderEncroachmentForm(idx); };
+  sBox.appendChild(sSelect);
+  card.appendChild(sBox);
+
+  // 3. Encroachment Type
   const typeBox = document.createElement("div");
   typeBox.className = "note-box";
   const tLabel = document.createElement("label");
@@ -936,21 +955,7 @@ function renderEncroachmentForm(idx) {
   typeBox.appendChild(typeSelect);
   card.appendChild(typeBox);
 
-  // Note
-  const noteBox = document.createElement("div");
-  noteBox.className = "note-box";
-  const nLabel = document.createElement("label");
-  nLabel.textContent = "หมายเหตุ";
-  noteBox.appendChild(nLabel);
-  const noteInput = document.createElement("input");
-  noteInput.type = "text";
-  noteInput.className = "note-input";
-  noteInput.value = rec.note;
-  noteInput.onchange = (e)=>{ rec.note=e.target.value; saveState(); };
-  noteBox.appendChild(noteInput);
-  card.appendChild(noteBox);
-
-  // Photos
+  // 4. Photos
   const pBox = document.createElement("div");
   pBox.className = "note-box";
   const pLabel = document.createElement("label");
@@ -1004,28 +1009,19 @@ function renderEncroachmentForm(idx) {
   pBox.appendChild(photoRow);
   card.appendChild(pBox);
 
-  // Status Switch
-  const sBox = document.createElement("div");
-  sBox.className = "note-box";
-  const sLabel = document.createElement("label");
-  sLabel.textContent = "สถานะการตรวจ";
-  sBox.appendChild(sLabel);
-  
-  const sSelect = document.createElement("select");
-  sSelect.className = "note-input";
-  const sOpts = [
-    {v:2, t:"รุกล้ำ"},
-    {v:1, t:"ตรวจแล้ว ไม่พบรุกล้ำ"}
-  ];
-  sOpts.forEach(o=>{
-    const opt = document.createElement("option");
-    opt.value = o.v; opt.textContent = o.t;
-    sSelect.appendChild(opt);
-  });
-  sSelect.value = rec.status;
-  sSelect.onchange = (e)=>{ rec.status=parseInt(e.target.value); saveState(); renderEncroachmentForm(idx); };
-  sBox.appendChild(sSelect);
-  card.appendChild(sBox);
+  // 5. Note
+  const noteBox = document.createElement("div");
+  noteBox.className = "note-box";
+  const nLabel = document.createElement("label");
+  nLabel.textContent = "หมายเหตุ";
+  noteBox.appendChild(nLabel);
+  const noteInput = document.createElement("input");
+  noteInput.type = "text";
+  noteInput.className = "note-input";
+  noteInput.value = rec.note;
+  noteInput.onchange = (e)=>{ rec.note=e.target.value; saveState(); };
+  noteBox.appendChild(noteInput);
+  card.appendChild(noteBox);
 
   wrap.appendChild(card);
 }
