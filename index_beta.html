@@ -157,7 +157,7 @@
     ค้นหาร้านค้า (ข้ามไปโซนอัตโนมัติ)
   </h3>
   <div class="field" style="position:relative;">
-    <input type="text" id="globalShopSearch" placeholder="พิมพ์ชื่อร้านค้าที่นี่..." autocomplete="off" oninput="handleGlobalSearch(this.value)" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border); font-size:15px; outline:none;" />
+    <input type="text" id="globalShopSearch" placeholder="พิมพ์ชื่อร้านค้าที่นี่..." autocomplete="off" oninput="handleGlobalSearch(this.value)" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border); font-size:15px; outline:none; color:#111; background:#fff;" />
     <div id="globalSearchResults" style="display:none; position:absolute; top:100%; left:0; right:0; margin-top:4px; border:1px solid var(--border); border-radius:8px; max-height:250px; overflow-y:auto; background:#fff; z-index:999; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
   </div>
 </div>
@@ -183,12 +183,32 @@ function handleGlobalSearch(q) {
       if(!seen.has(k)) { seen.add(k); unique.push(s); }
     });
     
-    resDiv.innerHTML = unique.map((s, idx) => `
-      <div style="padding:12px; border-bottom:1px solid #f0f0f0; cursor:pointer;" onclick="selectGlobalShop('${s.name}', '${s.zone}')">
-        <div style="font-weight:600; font-size:14px; color:#111;">${s.name}</div>
-        <div style="font-size:12px; color:var(--green); margin-top:4px;">📍 โซน: ${s.zone}</div>
-      </div>
-    `).join('');
+    // Group by shop name to see if it has multiple zones
+    const byName = {};
+    unique.forEach(s => {
+      if(!byName[s.name]) byName[s.name] = [];
+      byName[s.name].push(s.zone);
+    });
+
+    resDiv.innerHTML = Object.keys(byName).map(name => {
+      const zones = byName[name];
+      if (zones.length === 1) {
+        return `
+          <div style="padding:12px; border-bottom:1px solid #f0f0f0; cursor:pointer;" onclick="selectGlobalShop('${name}', '${zones[0]}')">
+            <div style="font-weight:600; font-size:14px; color:#111;">${name}</div>
+          </div>
+        `;
+      } else {
+        return `
+          <div style="padding:12px; border-bottom:1px solid #f0f0f0;">
+            <div style="font-weight:600; font-size:14px; color:#111; margin-bottom:6px;">${name}</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              ${zones.map(z => `<button style="background:#f0f0f0; border:1px solid #ddd; border-radius:12px; padding:4px 10px; font-size:12px; cursor:pointer;" onclick="selectGlobalShop('${name}', '${z}')">📍 ${z}</button>`).join('')}
+            </div>
+          </div>
+        `;
+      }
+    }).join('');
   }
   resDiv.style.display = 'block';
 }
@@ -907,6 +927,11 @@ function renderTab1(){
         input.placeholder = "ระบุหรือเลือกชื่อร้านค้า";
         input.value = cell.note;
         input.oninput = (e)=>{ cell.note = e.target.value; saveState(); };
+        if (cell.note && cell.note.trim() !== "" && typeof window !== 'undefined' && window.SHOPS2 && window.SHOPS2.some(s => s.name === cell.note)) {
+          input.disabled = true;
+          input.style.background = "#f0f0f0";
+          input.style.color = "#555";
+        }
         if (cell.note && cell.note.trim() !== "" && window.SHOPS2 && window.SHOPS2.some(s => s.name === cell.note)) {
           input.disabled = true;
           input.style.background = "#f0f0f0";
