@@ -266,31 +266,22 @@ function selectGlobalShop(shopName, zoneName) {
   const sel1 = document.getElementById("zoneSelect1");
   if(sel1) sel1.value = zoneName;
 
-  // 3. Find first available round (status=0) in this zone
-  const zRounds = state.tab1[zi];
-  const availIdx = zRounds.findIndex(cell => cell.status === 0);
-  if (availIdx !== -1) {
-    zRounds[availIdx].status = 2; // Set to bad
-    zRounds[availIdx].note = shopName;
-    zRounds[availIdx].encType = "";
-    saveState();
-    renderTab1();
-    showToast("เพิ่มการรุกล้ำใน " + zoneName + " รอบที่ " + ROUNDS[availIdx] + " แล้ว!");
-    
-    // Scroll to the specific card
-    setTimeout(() => {
-      // Find the card for this zone
-      const cards = document.getElementById("zonesContainer1").querySelectorAll('.card');
-      if (cards[zi]) {
-        cards[zi].scrollIntoView({behavior: "smooth", block: "center"});
-        // Also focus or highlight the newly opened form if possible
-        const inputs = cards[zi].querySelectorAll('.shop-input');
-        if(inputs.length > 0) inputs[inputs.length - 1].focus();
-      }
-    }, 150);
-  } else {
-    showToast("โซนนี้ถูกตรวจครบทุกรอบแล้ว ไม่สามารถเพิ่มได้");
-  }
+  // We removed the auto-click logic. We just lock the shop and jump to Tab 1.
+  
+  // Find all zones for this shop
+  const shopZones = window.SHOPS2.filter(s => s.name === shopName).map(s => mapApiZoneToTab1(s.zone)).filter(z => z && ZONES1.includes(z));
+  const uniqueShopZones = [...new Set(shopZones)];
+
+  // Lock the shop globally for Tab 1
+  state._lockedShop = {
+    name: shopName,
+    zones: uniqueShopZones
+  };
+
+  populateZoneSelect1();
+  renderTab1();
+  
+  showToast("เลือกร้าน " + shopName + " แล้ว (กรุณาเลือกรอบเวลาเพื่อบันทึก)");
 }
 
 // Close search results when clicking outside
@@ -858,6 +849,19 @@ function renderTab1(){
     title.textContent = zone;
     card.appendChild(title);
 
+    if (state._lockedShop) {
+      const lockBanner = document.createElement("div");
+      lockBanner.style.cssText = "background:#e8f4fd; border:1px solid #b6dcf9; padding:10px; border-radius:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;";
+      lockBanner.innerHTML = `<div style="font-size:13px; color:#0c548c;"><b>กำลังบันทึกร้าน:</b> ${state._lockedShop.name}</div>
+                              <button style="background:none; border:none; color:#0c548c; font-size:12px; cursor:pointer; text-decoration:underline;">ยกเลิก</button>`;
+      lockBanner.querySelector("button").onclick = () => {
+        state._lockedShop = null;
+        populateZoneSelect1();
+        renderTab1();
+      };
+      card.appendChild(lockBanner);
+    }
+
     const shiftLabel1 = document.createElement("div");
     shiftLabel1.className = "shift-label";
     shiftLabel1.textContent = "ผลัดเช้า";
@@ -990,7 +994,20 @@ function updateProgress1(){
 function populateZoneSelect1(){
   const sel = document.getElementById("zoneSelect1");
   sel.innerHTML = "";
-  ZONES1.forEach(z=>{
+  
+  let availableZones = ZONES1;
+  if (state._lockedShop && state._lockedShop.zones.length > 0) {
+    availableZones = state._lockedShop.zones;
+    if (availableZones.length === 1) {
+      sel.style.display = 'none';
+    } else {
+      sel.style.display = 'block';
+    }
+  } else {
+    sel.style.display = 'block';
+  }
+
+  availableZones.forEach(z=>{
     const opt = document.createElement("option");
     opt.value = z; opt.textContent = z;
     sel.appendChild(opt);
