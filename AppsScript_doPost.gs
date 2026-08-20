@@ -111,6 +111,44 @@ function doGet(e) {
     }
   }
 
+  // ── action=shops2: ดึงชื่อร้านค้าพร้อมโซนจาก spreadsheet ทะเบียนร้านค้า ──
+  if (action === 'shops2') {
+    try {
+      const SHOP_SS_ID = "1VqB8yiqny-UZNbY12AJZNecYPDff0-qkrv9kJmy-bfQ";
+      const SHOP_GID   = 1336386039;
+      const extSS    = SpreadsheetApp.openById(SHOP_SS_ID);
+      const extSheet = extSS.getSheets().find(s => s.getSheetId() === SHOP_GID);
+      let shops = [];
+      if (extSheet) {
+        const lastRow = extSheet.getLastRow();
+        if (lastRow >= 2) {
+          // ดึงจากคอลัมน์ F (6) ถึง S (19) -> 14 คอลัมน์
+          // F = r[0], K = r[5], S = r[13]
+          let shopList = extSheet.getRange(2, 6, lastRow - 1, 14).getValues()
+            .filter(r => String(r[5]).trim() === 'Active')              // กรองเฉพาะ K = "Active"
+            .map(r => ({ zone: String(r[0]).trim(), name: String(r[13]).trim() })) // F, S
+            .filter(v => v.name !== "");
+            
+          // ลบรายการซ้ำ
+          const seen = new Set();
+          shopList.forEach(item => {
+            const key = item.name + '|' + item.zone;
+            if (!seen.has(key)) {
+              seen.add(key);
+              shops.push(item);
+            }
+          });
+          shops.sort((a, b) => a.name.localeCompare(b.name, 'th'));
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ shops }))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ shops: [], error: err.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // ── default: รายชื่อผู้ตรวจจากชีต setting ──
   const sheet = ss.getSheetByName("setting");
   let names = [];
