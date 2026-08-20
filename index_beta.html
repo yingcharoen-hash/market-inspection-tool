@@ -941,47 +941,15 @@ function renderEncroachmentForm(idx) {
   const photoRow = document.createElement("div");
   photoRow.className = "photo-row";
 
-  // Shop Photo
-  const btnShop = document.createElement("button");
-  btnShop.className = "btn btn-outline";
-  btnShop.textContent = "📸 รูปหน้าร้าน";
-  const inShop = document.createElement("input");
-  inShop.type="file"; inShop.accept="image/*"; inShop.style.display="none";
-  inShop.onchange = (e)=>{
-    if(e.target.files[0]) processImage(e.target.files[0], b64=>{ rec.photos.shop=b64; saveState(); renderEncroachmentForm(idx); });
-  };
-  btnShop.onclick = ()=> inShop.click();
-  const divShop = document.createElement("div");
-  divShop.appendChild(inShop); divShop.appendChild(btnShop);
-  if(rec.photos.shop) {
-    const img = document.createElement("img");
-    img.src = rec.photos.shop; img.className="preview-img";
-    const del = document.createElement("button"); del.className="btn btn-outline"; del.textContent="ลบรูป"; del.style.marginTop="4px";
-    del.onclick = ()=>{ rec.photos.shop=null; saveState(); renderEncroachmentForm(idx); };
-    divShop.appendChild(img); divShop.appendChild(del);
+  // Conditional Photos based on status
+  if (!rec.photos) rec.photos = {};
+  if (rec.status === 2) {
+    photoRow.appendChild(createPhotoSlot("📸 รูปหน้าร้าน", rec.photos.shop, (val)=>{ rec.photos.shop=val; saveState(); renderEncroachmentForm(idx); }));
+    photoRow.appendChild(createPhotoSlot("📸 จุดรุกล้ำ", rec.photos.spot, (val)=>{ rec.photos.spot=val; saveState(); renderEncroachmentForm(idx); }));
+  } else if (rec.status === 1) {
+    photoRow.appendChild(createPhotoSlot("📸 ภาพประกอบการตรวจ", rec.photos.pass, (val)=>{ rec.photos.pass=val; saveState(); renderEncroachmentForm(idx); }));
   }
-  photoRow.appendChild(divShop);
-
-  // Spot Photo
-  const btnSpot = document.createElement("button");
-  btnSpot.className = "btn btn-outline";
-  btnSpot.textContent = "📸 จุดรุกล้ำ";
-  const inSpot = document.createElement("input");
-  inSpot.type="file"; inSpot.accept="image/*"; inSpot.style.display="none";
-  inSpot.onchange = (e)=>{
-    if(e.target.files[0]) processImage(e.target.files[0], b64=>{ rec.photos.spot=b64; saveState(); renderEncroachmentForm(idx); });
-  };
-  btnSpot.onclick = ()=> inSpot.click();
-  const divSpot = document.createElement("div");
-  divSpot.appendChild(inSpot); divSpot.appendChild(btnSpot);
-  if(rec.photos.spot) {
-    const img = document.createElement("img");
-    img.src = rec.photos.spot; img.className="preview-img";
-    const del = document.createElement("button"); del.className="btn btn-outline"; del.textContent="ลบรูป"; del.style.marginTop="4px";
-    del.onclick = ()=>{ rec.photos.spot=null; saveState(); renderEncroachmentForm(idx); };
-    divSpot.appendChild(img); divSpot.appendChild(del);
-  }
-  photoRow.appendChild(divSpot);
+  
   pBox.appendChild(photoRow);
   card.appendChild(pBox);
 
