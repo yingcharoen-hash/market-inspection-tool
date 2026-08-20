@@ -150,6 +150,9 @@
   </div>
 </header>
 
+
+
+
 <div class="tabs">
   <button class="tab-btn active" data-tab="tab1">1. ตรวจรุกล้ำ</button>
   <button class="tab-btn" data-tab="tab2">2. ตรวจความสะอาด</button>
@@ -186,7 +189,8 @@
       <div class="progress-label" id="progLabel1">0/0 รอบ</div>
     </div>
 
-    <div id="zonesContainer1"></div>
+    <select id="zoneSelect1" class="zone-select" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border); font-size:15px; margin-bottom:16px; background:#fff; outline:none;"></select>
+<div id="zonesContainer1"></div>
 
     <div class="actions">
       <button class="btn btn-primary" onclick="sendToGoogleSheet()">บันทึกข้อมูล</button>
@@ -300,7 +304,7 @@ const ITEMS3 = [
 const STORAGE_KEY = "marketInspectionState";
 const GUARD_KEY = "marketInspectionGuardName";
 const GUARD_LIST_KEY = "marketInspectionGuardList";
-const SHOP_LIST_KEY  = "marketInspectionShopList";
+const SHOP_LIST_KEY  = "marketInspectionShopList2";
 let state = loadState();
 
 function todayStr(){
@@ -340,7 +344,7 @@ async function loadShopNames(){
   try{ cached = JSON.parse(localStorage.getItem(SHOP_LIST_KEY) || "[]"); }catch(e){}
   populateShopDatalist(cached);
   try{
-    const res = await fetch(SHEET_URL + "?action=shops");
+    const res = await fetch(SHEET_URL + "?action=shops2");
     const data = await res.json();
     if(data && Array.isArray(data.shops) && data.shops.length){
       populateShopDatalist(data.shops);
@@ -352,7 +356,7 @@ async function refreshShopNames(){
   showToast("กำลังอัปเดตรายชื่อร้าน...");
   try{ localStorage.removeItem(SHOP_LIST_KEY); }catch(e){}
   try{
-    const res = await fetch(SHEET_URL + "?action=shops&t=" + Date.now()); // bypass cache
+    const res = await fetch(SHEET_URL + "?action=shops2&t=" + Date.now()); // bypass cache
     const data = await res.json();
     if(data && Array.isArray(data.shops) && data.shops.length){
       populateShopDatalist(data.shops);
@@ -367,13 +371,17 @@ async function refreshShopNames(){
 }
 
 function populateShopDatalist(shops){
+  window.SHOPS2 = shops; // store globally for global search
   const dl = document.getElementById("shopList");
-  dl.innerHTML = "";
-  shops.forEach(name=>{
-    const opt = document.createElement("option");
-    opt.value = name;
-    dl.appendChild(opt);
-  });
+  if(dl){
+    dl.innerHTML = "";
+    shops.forEach(item=>{
+      const opt = document.createElement("option");
+      // item could be an object {zone, name} or a string (if old format somehow survived)
+      opt.value = typeof item === 'object' ? item.name : item;
+      dl.appendChild(opt);
+    });
+  }
 }
 
 async function loadGuardNames(){
@@ -419,11 +427,9 @@ function loadState(){
 
 function migrateState(s){
   if(s.guardName === undefined) s.guardName = lastGuardName();
-  s.tab1.forEach(zoneArr=> zoneArr.forEach(c=>{
-    if(!c.photos) c.photos = {shop:null, spot:null};
-    if(c.encType === undefined) c.encType = "";
-    delete c.photo;
-  }));
+  if (!Array.isArray(s.tab1) || (s.tab1.length > 0 && Array.isArray(s.tab1[0]))) {
+    s.tab1 = [];
+  }
   Object.values(s.tab2 || {}).forEach(data=>{
     data.items.forEach(e=>{ if(!e.photos) e.photos = {before:null, after:null}; });
   });
@@ -489,26 +495,24 @@ function buildSheetRows(){
   const ts = new Date().toLocaleString('en-GB', {timeZone:'Asia/Bangkok'}).replace(',', '');
   const guard = state.guardName || "";
 
-  ZONES1.forEach((zone, zi)=>{
-    ROUNDS.forEach((round, ri)=>{
-      const c = state.tab1[zi][ri];
-      if(c.status !== 0){
-        rows.push({
-          date: state.date, guardName: guard, section:"1. ตรวจรุกล้ำ", location: zone, item:"รอบ " + round,
-          status: c.status===1 ? "ตรวจแล้ว ไม่พบรุกล้ำ" : "พบการรุกล้ำ",
-          encType: c.encType || "",
-          note: c.note || "",
-          photos: c.status===2 ? [
-            {name:"shop_"+zone+"_"+round+".jpg", base64:(c.photos&&c.photos.shop)||null},
-            {name:"spot_"+zone+"_"+round+".jpg", base64:(c.photos&&c.photos.spot)||null}
-          ] : [
-            {name:"pass_"+zone+"_"+round+".jpg", base64:(c.photos&&c.photos.pass)||null},
-            {name:"", base64:null}
-          ],
-          timestamp: ts
-        });
-      }
-    });
+  state.tab1.forEach(c => {
+    if(c && c.status !== 0 && c.zone){
+      rows.push({
+        date: state.date, guardName: guard, section:"1. ตรวจรุกล้ำ", location: c.zone, item:"รอบ " + c.round,
+        status: c.status===1 ? "ตรวจแล้ว ไม่พบรุกล้ำ" : "รุกล้ำ",
+        encType: c.encType || "",
+        shopName: c.shopName || "",
+        note: c.note || "",
+        photos: c.status===2 ? [
+          {name:"shop_"+c.zone+"_"+c.round+".jpg", base64:(c.photos&&c.photos.shop)||null},
+          {name:"spot_"+c.zone+"_"+c.round+".jpg", base64:(c.photos&&c.photos.spot)||null}
+        ] : [
+          {name:"pass_"+c.zone+"_"+c.round+".jpg", base64:(c.photos&&c.photos.pass)||null},
+          {name:"", base64:null}
+        ],
+        timestamp: ts
+      });
+    }
   });
 
   Object.keys(state.tab2).forEach(zone=>{
@@ -585,7 +589,7 @@ async function sendToGoogleSheet(){
       body: JSON.stringify({rows: rows})
     });
     showToast("ส่งข้อมูล " + rows.length + " รายการแล้ว — ตรวจสอบใน Google Sheet");
-    state.tab1 = ZONES1.map(()=> ROUNDS.map(()=>({status:0, encType:"", note:"", photos:{shop:null, spot:null, pass:null}})));
+    state.tab1 = [];
     state.tab2 = {};
     state.tab3 = {};
     saveState();
@@ -683,135 +687,323 @@ function createPhotoSlot(labelText, dataUrl, onChange){
 
 /* ========================= RENDER TAB 1 ========================= */
 function renderTab1(){
-  const container = document.getElementById("zonesContainer1");
-  container.innerHTML = "";
-  ZONES1.forEach((zone, zi)=>{
-    const card = document.createElement("div");
-    card.className = "card";
-    const title = document.createElement("div");
-    title.className = "zone-title";
-    title.textContent = zone;
-    card.appendChild(title);
+  const wrap = document.getElementById("zonesContainer1");
+  const zs = document.getElementById("zoneSelect1");
+  if(zs) zs.style.display = "none";
+  wrap.innerHTML = "";
 
-    const shiftLabel1 = document.createElement("div");
-    shiftLabel1.className = "shift-label";
-    shiftLabel1.textContent = "ผลัดเช้า";
-    card.appendChild(shiftLabel1);
+  if(!state._currentRound1) state._currentRound1 = ROUNDS[0];
 
-    const gridAM = document.createElement("div");
-    gridAM.className = "round-grid";
-    const gridPM = document.createElement("div");
-    gridPM.className = "round-grid";
-
-    ROUNDS.forEach((round, ri)=>{
-      const cell = state.tab1[zi][ri];
-      const btn = document.createElement("div");
-      btn.className = "round-btn" + (cell.status===1?" ok":"") + (cell.status===2?" bad":"");
-      btn.textContent = round;
-      btn.onclick = ()=>{
-        cell.status = (cell.status + 1) % 3;
-        cell.encType=""; cell.note=""; cell.photos = {shop:null, spot:null, pass:null};
-        saveState();
-        renderTab1();
-      };
-      if(ri < ROUND_SHIFT_BREAK) gridAM.appendChild(btn);
-      else gridPM.appendChild(btn);
-    });
-    card.appendChild(gridAM);
-
-    const shiftLabel2 = document.createElement("div");
-    shiftLabel2.className = "shift-label";
-    shiftLabel2.textContent = "ผลัดดึก";
-    card.appendChild(shiftLabel2);
-    card.appendChild(gridPM);
-
-    ROUNDS.forEach((round, ri)=>{
-      const cell = state.tab1[zi][ri];
-      if(cell.status === 2){
-        const box = document.createElement("div");
-        box.className = "note-box";
-        const label = document.createElement("label");
-        label.textContent = "พบรุกล้ำ — รอบ " + round;
-        box.appendChild(label);
-
-        const typeLabel = document.createElement("label");
-        typeLabel.textContent = "ประเภทการรุกล้ำ";
-        typeLabel.style.cssText = "font-size:13px;font-weight:700;color:var(--red);display:block;margin-bottom:4px;";
-        box.appendChild(typeLabel);
-        const typeSelect = document.createElement("select");
-        typeSelect.style.cssText = "margin-bottom:10px;background:#fff;color:var(--text);border:1px solid var(--border);";
-        const emptyOpt = document.createElement("option");
-        emptyOpt.value = ""; emptyOpt.textContent = "— เลือกประเภท —";
-        typeSelect.appendChild(emptyOpt);
-        ENCROACH_TYPES.forEach(t=>{
-          const opt = document.createElement("option");
-          opt.value = t; opt.textContent = t;
-          typeSelect.appendChild(opt);
-        });
-        typeSelect.value = cell.encType || "";
-        typeSelect.onchange = (e)=>{ cell.encType = e.target.value; saveState(); };
-        box.appendChild(typeSelect);
-
-        const shopLabel = document.createElement("label");
-        shopLabel.textContent = "ชื่อร้านค้าที่รุกล้ำ";
-        shopLabel.style.cssText = "font-size:13px;font-weight:700;color:var(--red);display:block;margin-bottom:4px;";
-        box.appendChild(shopLabel);
-        const input = document.createElement("input");
-        input.type = "text";
-        input.setAttribute("list", "shopList");
-        input.placeholder = "ระบุหรือเลือกชื่อร้านค้า";
-        input.value = cell.note;
-        input.oninput = (e)=>{ cell.note = e.target.value; saveState(); };
-        input.onfocus = ()=>{
-          // มือถือ: เลื่อน input ขึ้นด้านบนให้ dropdown มีที่แสดงโดยไม่บังช่องอื่น
-          setTimeout(()=>{ input.scrollIntoView({behavior:'smooth', block:'start'}); }, 350);
-        };
-        box.appendChild(input);
-
-        const photoRow = document.createElement("div");
-        photoRow.className = "photo-row";
-        photoRow.style.marginTop = "8px";
-        photoRow.appendChild(createPhotoSlot("ภาพชื่อร้านค้า", cell.photos.shop, (val)=>{ cell.photos.shop = val; saveState(); renderTab1(); }));
-        photoRow.appendChild(createPhotoSlot("ภาพจุดที่รุกล้ำ", cell.photos.spot, (val)=>{ cell.photos.spot = val; saveState(); renderTab1(); }));
-        box.appendChild(photoRow);
-
-        card.appendChild(box);
-      }
-      if(cell.status === 1){
-        const passBox = document.createElement("div");
-        passBox.className = "note-box";
-        passBox.style.borderLeftColor = "var(--green)";
-        const passLabel = document.createElement("label");
-        passLabel.textContent = "ไม่พบรุกล้ำ — รอบ " + round;
-        passLabel.style.cssText = "font-size:12px;font-weight:700;color:var(--green);display:block;margin-bottom:4px;";
-        passBox.appendChild(passLabel);
-        const hint = document.createElement("div");
-        hint.style.cssText = "font-size:11px;color:var(--muted);margin-bottom:8px;";
-        hint.textContent = "ถ่ายรูปประกอบได้ (ไม่บังคับ)";
-        passBox.appendChild(hint);
-        const passPhotoRow = document.createElement("div");
-        passPhotoRow.className = "photo-row";
-        passPhotoRow.appendChild(createPhotoSlot("ภาพประกอบการตรวจ",
-          (cell.photos && cell.photos.pass) || null,
-          (val)=>{ if(!cell.photos) cell.photos={}; cell.photos.pass=val; saveState(); renderTab1(); }));
-        passBox.appendChild(passPhotoRow);
-        card.appendChild(passBox);
-      }
-    });
-
-    container.appendChild(card);
+  // Round Selector
+  const roundWrap = document.createElement("div");
+  roundWrap.style.marginBottom = "16px";
+  roundWrap.innerHTML = "<label style='font-weight:700;display:block;margin-bottom:8px;'>เลือกรอบเวลาตรวจ</label>";
+  const roundGrid = document.createElement("div");
+  roundGrid.className = "round-grid";
+  ROUNDS.forEach(r => {
+    const btn = document.createElement("div");
+    btn.className = "round-btn" + (state._currentRound1 === r ? " selected-round" : "");
+    btn.textContent = r;
+    if (state._currentRound1 === r) {
+      btn.style.backgroundColor = "var(--primary)";
+      btn.style.color = "#111";
+    }
+    btn.onclick = () => {
+      state._currentRound1 = r;
+      renderTab1();
+    };
+    roundGrid.appendChild(btn);
   });
+  roundWrap.appendChild(roundGrid);
+  wrap.appendChild(roundWrap);
+
+  // List of Records for this round
+  const records = state.tab1.map((c, i) => ({...c, originalIndex: i})).filter(c => c.round === state._currentRound1);
+  
+  const listWrap = document.createElement("div");
+  if (records.length === 0) {
+    listWrap.innerHTML = "<div style='color:#666; font-style:italic; margin-bottom:16px;'>ยังไม่มีรายการรุกล้ำในรอบนี้</div>";
+  } else {
+    records.forEach(rec => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.style.position = "relative";
+      card.innerHTML = `
+        <div style="font-weight:700; font-size:16px; margin-bottom:4px;">${rec.shopName || "ไม่ได้ระบุชื่อร้าน"}</div>
+        <div style="font-size:13px; color:#666;">โซน: ${rec.zone || "-"} | สถานะ: ${rec.status===1?"ปกติ":"รุกล้ำ"}</div>
+      `;
+      // Delete button
+      const delBtn = document.createElement("button");
+      delBtn.className = "btn btn-outline";
+      delBtn.style.position = "absolute";
+      delBtn.style.right = "12px";
+      delBtn.style.top = "12px";
+      delBtn.style.padding = "4px 8px";
+      delBtn.textContent = "ลบ";
+      delBtn.onclick = () => {
+        if(confirm("ลบรายการนี้?")) {
+          state.tab1.splice(rec.originalIndex, 1);
+          saveState();
+          renderTab1();
+        }
+      };
+      card.appendChild(delBtn);
+
+      // Edit button (makes card clickable)
+      card.style.cursor = "pointer";
+      card.onclick = (e) => {
+        if(e.target === delBtn) return;
+        renderEncroachmentForm(rec.originalIndex);
+      };
+      
+      listWrap.appendChild(card);
+    });
+  }
+  wrap.appendChild(listWrap);
+
+  // Add Button
+  const addBtn = document.createElement("button");
+  addBtn.className = "btn btn-primary";
+  addBtn.textContent = "+ เพิ่มรายการในรอบ " + state._currentRound1;
+  addBtn.onclick = () => {
+    state.tab1.push({
+      round: state._currentRound1,
+      shopName: "",
+      zone: "",
+      status: 2, // Default to Encroaching when added
+      encType: "",
+      note: "",
+      photos: {shop:null, spot:null, pass:null}
+    });
+    saveState();
+    renderEncroachmentForm(state.tab1.length - 1);
+  };
+  wrap.appendChild(addBtn);
+  
   updateProgress1();
 }
 
+function handleInlineShopSearch(idx, query) {
+  const resDiv = document.getElementById('inlineSearchResults');
+  if (!query || query.length < 2) {
+    resDiv.style.display = 'none';
+    return;
+  }
+  
+  const matches = window.SHOPS2.filter(s => s.name.includes(query) || s.zone.includes(query)).slice(0,20);
+  if (matches.length === 0) {
+    resDiv.innerHTML = '<div style="padding:10px;color:#666;">ไม่พบข้อมูลร้านนี้</div>';
+    resDiv.style.display = 'block';
+    return;
+  }
+
+  // Group by name
+  const grouped = {};
+  matches.forEach(m => {
+    if(!grouped[m.name]) grouped[m.name] = [];
+    grouped[m.name].push(m.zone);
+  });
+
+  resDiv.innerHTML = "";
+  Object.keys(grouped).forEach(name => {
+    const item = document.createElement('div');
+    item.style.padding = '10px';
+    item.style.borderBottom = '1px solid #eee';
+    
+    const nameEl = document.createElement('div');
+    nameEl.style.fontWeight = 'bold';
+    nameEl.textContent = name;
+    item.appendChild(nameEl);
+    
+    const zones = grouped[name];
+    zones.forEach(z => {
+      if(!z) return;
+      const zBtn = document.createElement('button');
+      zBtn.style.cssText = 'background:#f0f0f0; border:1px solid #ddd; border-radius:12px; padding:4px 10px; font-size:12px; cursor:pointer; margin-top:4px; margin-right:4px;';
+      zBtn.textContent = "📍 " + z;
+      zBtn.onclick = () => {
+        state.tab1[idx].shopName = name;
+        state.tab1[idx].zone = z;
+        saveState();
+        renderEncroachmentForm(idx);
+      };
+      item.appendChild(zBtn);
+    });
+    
+    resDiv.appendChild(item);
+  });
+  resDiv.style.display = 'block';
+}
+
+function renderEncroachmentForm(idx) {
+  const rec = state.tab1[idx];
+  const wrap = document.getElementById("zonesContainer1");
+  const zs = document.getElementById("zoneSelect1");
+  if(zs) zs.style.display = "none";
+  wrap.innerHTML = "";
+
+  const backBtn = document.createElement("button");
+  backBtn.className = "btn btn-outline";
+  backBtn.style.marginBottom = "16px";
+  backBtn.textContent = "กลับไปหน้ารายการ (รอบ " + rec.round + ")";
+  backBtn.onclick = () => { renderTab1(); };
+  wrap.appendChild(backBtn);
+
+  const card = document.createElement("div");
+  card.className = "card";
+  
+  const title = document.createElement("h3");
+  title.style.marginBottom = "12px";
+  title.textContent = "บันทึกข้อมูล (รอบ " + rec.round + ")";
+  card.appendChild(title);
+
+  // 1. Shop Search Input
+  const box = document.createElement("div");
+  box.className = "note-box";
+  const label = document.createElement("label");
+  label.textContent = "ค้นหาชื่อร้าน / โซน";
+  box.appendChild(label);
+
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.className = "note-input";
+  searchInput.placeholder = "พิมพ์ชื่อร้าน...";
+  searchInput.value = rec.shopName || "";
+  
+  const searchResults = document.createElement("div");
+  searchResults.id = "inlineSearchResults";
+  searchResults.style.cssText = "display:none; border:1px solid #ddd; border-top:none; background:#fff; max-height:200px; overflow-y:auto; border-radius:0 0 8px 8px;";
+  
+  searchInput.oninput = (e) => handleInlineShopSearch(idx, e.target.value);
+  
+  box.appendChild(searchInput);
+  box.appendChild(searchResults);
+  card.appendChild(box);
+
+  // Zone display
+  if (rec.zone) {
+    const zBox = document.createElement("div");
+    zBox.className = "note-box";
+    zBox.innerHTML = `<label>โซนที่เลือก</label><div style="padding:8px; background:#f0f0f0; border-radius:4px;">${rec.zone}</div>`;
+    card.appendChild(zBox);
+  }
+
+  // 2. Status Switch
+  const sBox = document.createElement("div");
+  sBox.className = "note-box";
+  const sLabel = document.createElement("label");
+  sLabel.textContent = "สถานะการตรวจ";
+  sBox.appendChild(sLabel);
+  
+  const sSelect = document.createElement("select");
+  sSelect.className = "note-input";
+  const sOpts = [
+    {v:2, t:"รุกล้ำ"},
+    {v:1, t:"ตรวจแล้ว ไม่พบรุกล้ำ"}
+  ];
+  sOpts.forEach(o=>{
+    const opt = document.createElement("option");
+    opt.value = o.v; opt.textContent = o.t;
+    sSelect.appendChild(opt);
+  });
+  sSelect.value = rec.status;
+  sSelect.onchange = (e)=>{ rec.status=parseInt(e.target.value); saveState(); renderEncroachmentForm(idx); };
+  sBox.appendChild(sSelect);
+  card.appendChild(sBox);
+
+  // 3. Encroachment Type
+  const typeBox = document.createElement("div");
+  typeBox.className = "note-box";
+  const tLabel = document.createElement("label");
+  tLabel.textContent = "ประเภทการรุกล้ำ";
+  typeBox.appendChild(tLabel);
+
+  const typeSelect = document.createElement("select");
+  typeSelect.className = "note-input";
+  const types = ["", "วางสินค้าล้ำเส้น", "วางของบนทางเดิน", "ต่อเติมแผง", "อื่นๆ"];
+  types.forEach(t=>{
+    const opt = document.createElement("option");
+    opt.value = t; opt.textContent = t?t:"-- เลือกประเภท --";
+    typeSelect.appendChild(opt);
+  });
+  typeSelect.value = rec.encType;
+  typeSelect.onchange = (e)=>{ rec.encType = e.target.value; saveState(); };
+  typeBox.appendChild(typeSelect);
+  card.appendChild(typeBox);
+
+  // 4. Photos
+  const pBox = document.createElement("div");
+  pBox.className = "note-box";
+  const pLabel = document.createElement("label");
+  pLabel.textContent = "รูปภาพ";
+  pBox.appendChild(pLabel);
+
+  const photoRow = document.createElement("div");
+  photoRow.className = "photo-row";
+
+  // Conditional Photos based on status
+  if (!rec.photos) rec.photos = {};
+  if (rec.status === 2) {
+    photoRow.appendChild(createPhotoSlot("📸 รูปหน้าร้าน", rec.photos.shop, (val)=>{ rec.photos.shop=val; saveState(); renderEncroachmentForm(idx); }));
+    photoRow.appendChild(createPhotoSlot("📸 จุดรุกล้ำ", rec.photos.spot, (val)=>{ rec.photos.spot=val; saveState(); renderEncroachmentForm(idx); }));
+  } else if (rec.status === 1) {
+    photoRow.appendChild(createPhotoSlot("📸 ภาพประกอบการตรวจ", rec.photos.pass, (val)=>{ rec.photos.pass=val; saveState(); renderEncroachmentForm(idx); }));
+  }
+  
+  pBox.appendChild(photoRow);
+  card.appendChild(pBox);
+
+  // 5. Note
+  const noteBox = document.createElement("div");
+  noteBox.className = "note-box";
+  const nLabel = document.createElement("label");
+  nLabel.textContent = "หมายเหตุ";
+  noteBox.appendChild(nLabel);
+  const noteInput = document.createElement("input");
+  noteInput.type = "text";
+  noteInput.className = "note-input";
+  noteInput.value = rec.note;
+  noteInput.onchange = (e)=>{ rec.note=e.target.value; saveState(); };
+  noteBox.appendChild(noteInput);
+  card.appendChild(noteBox);
+
+  wrap.appendChild(card);
+}
+
 function updateProgress1(){
-  let total=0, done=0;
-  state.tab1.forEach(zoneArr=> zoneArr.forEach(c=>{ total++; if(c.status!==0) done++; }));
-  document.getElementById("prog1").style.width = (total? (done/total*100):0) + "%";
-  document.getElementById("progLabel1").textContent = done + "/" + total + " รอบ";
+  const done = state.tab1.filter(c=>c.status!==0).length;
+  const p1 = document.getElementById("prog1");
+  if(p1) p1.style.width = "100%";
+  const pl1 = document.getElementById("progLabel1");
+  if(pl1) pl1.textContent = done + " รายการ";
 }
 
 /* ========================= RENDER TAB 2 ========================= */
+function populateZoneSelect1(){
+  const sel = document.getElementById("zoneSelect1");
+  sel.innerHTML = "";
+  
+  let availableZones = ZONES1;
+  if (state._lockedShop && state._lockedShop.zones.length > 0) {
+    availableZones = state._lockedShop.zones;
+    if (availableZones.length === 1) {
+      sel.style.display = 'none';
+    } else {
+      sel.style.display = 'block';
+    }
+  } else {
+    sel.style.display = 'block';
+  }
+
+  availableZones.forEach(z=>{
+    const opt = document.createElement("option");
+    opt.value = z; opt.textContent = z;
+    sel.appendChild(opt);
+  });
+  sel.value = state._currentZone1 || ZONES1[0];
+  sel.onchange = ()=>{ state._currentZone1 = sel.value; renderTab1(); };
+}
+
 function populateZoneSelect2(){
   const sel = document.getElementById("zoneSelect2");
   sel.innerHTML = "";
@@ -991,7 +1183,7 @@ function updateProgress3(data){
 /* ========================= RESET ========================= */
 function resetTab(tab){
   if(!confirm("ล้างข้อมูลของแท็บนี้ทั้งหมด สำหรับวันที่ " + state.date + " ใช่หรือไม่?")) return;
-  if(tab==="tab1") state.tab1 = ZONES1.map(()=> ROUNDS.map(()=>({status:0, note:"", photos:{shop:null, spot:null}})));
+  if(tab==="tab1") state.tab1 = [];
   if(tab==="tab2") state.tab2 = {};
   if(tab==="tab3") state.tab3 = {};
   saveState();
@@ -1010,6 +1202,7 @@ function renderAll(){
   setGuardSelectValue();
   updateDateLabel();
   renderTab1();
+  populateZoneSelect1();
   populateZoneSelect2();
   renderTab2Items();
   populateZoneSelect3();
