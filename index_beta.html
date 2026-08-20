@@ -193,6 +193,26 @@ function handleGlobalSearch(q) {
   resDiv.style.display = 'block';
 }
 
+function mapApiZoneToTab1(apiZone) {
+  if (!apiZone) return null;
+  const z = apiZone.toLowerCase();
+  if (z.includes("กลาง")) return "อาคารกลาง";
+  if (z.includes("ปลาน้ำจืด") || z.includes("ปลาทะเล")) return "อาคารยาว ปลาน้ำจืด-ปลาทะเล";
+  if (z.includes("ท้ายเพชร") || (z.includes("อาคารยาว") && !z.includes("ปลา"))) return "อาคารยาว ท้ายเพชร"; // Fallback
+  if (z.includes("ผัก") && z.includes("2")) return "โซนอาคารผัก 2";
+  if (z.includes("60")) return "โซนอาคาร 60 ปี";
+  if (z.includes("เทคโฮม") || z.includes("take home")) return "โซนเทคโฮม";
+  if (z.includes("พลาซ่า") || z.includes("จงรักษ์")) return "พลาซ่า + ฟู้ดพลาซ่า + อาคารจงรักษ์";
+  
+  // Try direct includes
+  for (let tz of ZONES1) {
+    if (tz.includes(apiZone) || apiZone.includes(tz)) return tz;
+  }
+  
+  // If all fails, return null
+  return null;
+}
+
 function selectGlobalShop(shopName, zoneName) {
   document.getElementById('globalShopSearch').value = '';
   document.getElementById('globalSearchResults').style.display = 'none';
@@ -200,16 +220,26 @@ function selectGlobalShop(shopName, zoneName) {
   // 1. Select Tab 1
   document.querySelector('.tab-btn[data-tab="tab1"]').click();
   
-  // 2. Find the zone index in ZONES1
+  // 2. Map API zone to ZONES1
   if (typeof ZONES1 === 'undefined') {
     showToast("ระบบยังโหลดข้อมูลไม่เสร็จ");
     return;
   }
-  const zi = ZONES1.indexOf(zoneName);
-  if (zi === -1) {
-    showToast("ไม่พบโซนนี้ในรายการตรวจรุกล้ำ: " + zoneName);
+  
+  const mappedZone = mapApiZoneToTab1(zoneName);
+  if (!mappedZone) {
+    showToast("ไม่พบร้านนี้ในอาคาร (ไม่ตรงกับโซนตรวจรุกล้ำ): " + zoneName);
     return;
   }
+  
+  const zi = ZONES1.indexOf(mappedZone);
+  if (zi === -1) {
+    showToast("ไม่พบโซนตรวจรุกล้ำ: " + mappedZone);
+    return;
+  }
+  
+  // Update zoneName variable to use mappedZone from here on
+  zoneName = mappedZone;
   
   // Update zoneSelect1
   state._currentZone1 = zoneName;
