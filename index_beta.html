@@ -495,26 +495,24 @@ function buildSheetRows(){
   const ts = new Date().toLocaleString('en-GB', {timeZone:'Asia/Bangkok'}).replace(',', '');
   const guard = state.guardName || "";
 
-  ZONES1.forEach((zone, zi)=>{
-    ROUNDS.forEach((round, ri)=>{
-      const c = state.tab1[zi][ri];
-      if(c.status !== 0){
-        rows.push({
-          date: state.date, guardName: guard, section:"1. ตรวจรุกล้ำ", location: zone, item:"รอบ " + round,
-          status: c.status===1 ? "ตรวจแล้ว ไม่พบรุกล้ำ" : "พบการรุกล้ำ",
-          encType: c.encType || "",
-          note: c.note || "",
-          photos: c.status===2 ? [
-            {name:"shop_"+zone+"_"+round+".jpg", base64:(c.photos&&c.photos.shop)||null},
-            {name:"spot_"+zone+"_"+round+".jpg", base64:(c.photos&&c.photos.spot)||null}
-          ] : [
-            {name:"pass_"+zone+"_"+round+".jpg", base64:(c.photos&&c.photos.pass)||null},
-            {name:"", base64:null}
-          ],
-          timestamp: ts
-        });
-      }
-    });
+  state.tab1.forEach(c => {
+    if(c && c.status !== 0 && c.zone){
+      const loc = (c.shopName ? c.shopName + " (" + c.zone + ")" : c.zone);
+      rows.push({
+        date: state.date, guardName: guard, section:"1. ตรวจรุกล้ำ", location: loc, item:"รอบ " + c.round,
+        status: c.status===1 ? "ตรวจแล้ว ไม่พบรุกล้ำ" : "รุกล้ำ",
+        encType: c.encType || "",
+        note: c.note || "",
+        photos: c.status===2 ? [
+          {name:"shop_"+c.zone+"_"+c.round+".jpg", base64:(c.photos&&c.photos.shop)||null},
+          {name:"spot_"+c.zone+"_"+c.round+".jpg", base64:(c.photos&&c.photos.spot)||null}
+        ] : [
+          {name:"pass_"+c.zone+"_"+c.round+".jpg", base64:(c.photos&&c.photos.pass)||null},
+          {name:"", base64:null}
+        ],
+        timestamp: ts
+      });
+    }
   });
 
   Object.keys(state.tab2).forEach(zone=>{
@@ -792,27 +790,6 @@ function handleInlineShopSearch(idx, query) {
     return;
   }
   
-  // Use mapApiZoneToTab1 logic locally
-  function localMapZone(apiZone) {
-    if (!apiZone) return null;
-    const z = apiZone.toLowerCase();
-    if (z.includes("กลาง")) return "อาคารกลาง";
-    if (z.includes("ปลาน้ำจืด") || z.includes("ปลาทะเล")) return "อาคารยาว ปลาน้ำจืด-ปลาทะเล";
-    if (z.includes("ท้ายเพชร") || (z.includes("อาคารยาว") && !z.includes("ปลา"))) return "อาคารยาว ท้ายเพชร"; // Fallback
-    if (z.includes("ผัก") && z.includes("2")) return "โซนอาคารผัก 2";
-    if (z.includes("60")) return "โซนอาคาร 60 ปี";
-    if (z.includes("เทคโฮม") || z.includes("take home")) return "โซนเทคโฮม";
-    if (z.includes("พลาซ่า") || z.includes("จงรักษ์")) return "พลาซ่า + ฟู้ดพลาซ่า + อาคารจงรักษ์";
-    
-    // Try direct includes
-    for (let tz of ZONES1) {
-      if (tz.includes(apiZone) || apiZone.includes(tz)) return tz;
-    }
-    
-    // If all fails, return null
-    return null;
-  }
-  
   const matches = window.SHOPS2.filter(s => s.name.includes(query) || s.zone.includes(query)).slice(0,20);
   if (matches.length === 0) {
     resDiv.innerHTML = '<div style="padding:10px;color:#666;">ไม่พบข้อมูลร้านนี้</div>';
@@ -840,14 +817,13 @@ function handleInlineShopSearch(idx, query) {
     
     const zones = grouped[name];
     zones.forEach(z => {
-      const mappedZ = localMapZone(z);
-      if(!mappedZ) return;
+      if(!z) return;
       const zBtn = document.createElement('button');
       zBtn.style.cssText = 'background:#f0f0f0; border:1px solid #ddd; border-radius:12px; padding:4px 10px; font-size:12px; cursor:pointer; margin-top:4px; margin-right:4px;';
-      zBtn.textContent = "📍 " + mappedZ;
+      zBtn.textContent = "📍 " + z;
       zBtn.onclick = () => {
         state.tab1[idx].shopName = name;
-        state.tab1[idx].zone = mappedZ;
+        state.tab1[idx].zone = z;
         saveState();
         renderEncroachmentForm(idx);
       };
@@ -1027,8 +1003,12 @@ function renderEncroachmentForm(idx) {
 }
 
 function updateProgress1(){
-  let total=0, done=0;
-  state.tab1.forEach(zoneArr=> zoneArr.forEach(c=>{ total++; if(c.status!==0) done++; }));
+  const done = state.tab1.filter(c=>c.status!==0).length;
+  const p1 = document.getElementById("prog1");
+  if(p1) p1.style.width = "100%";
+  const pl1 = document.getElementById("progLabel1");
+  if(pl1) pl1.textContent = done + " รายการ";
+}));
   document.getElementById("prog1").style.width = (total? (done/total*100):0) + "%";
   document.getElementById("progLabel1").textContent = done + "/" + total + " รอบ";
 }
