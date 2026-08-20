@@ -471,13 +471,17 @@ async function refreshShopNames(){
 }
 
 function populateShopDatalist(shops){
+  window.SHOPS2 = shops; // store globally for global search
   const dl = document.getElementById("shopList");
-  dl.innerHTML = "";
-  shops.forEach(name=>{
-    const opt = document.createElement("option");
-    opt.value = name;
-    dl.appendChild(opt);
-  });
+  if(dl){
+    dl.innerHTML = "";
+    shops.forEach(item=>{
+      const opt = document.createElement("option");
+      // item could be an object {zone, name} or a string (if old format somehow survived)
+      opt.value = typeof item === 'object' ? item.name : item;
+      dl.appendChild(opt);
+    });
+  }
 }
 
 async function loadGuardNames(){
