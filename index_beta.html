@@ -251,7 +251,7 @@ function selectGlobalShop(shopName, zoneName) {
   const availIdx = zRounds.findIndex(cell => cell.status === 0);
   if (availIdx !== -1) {
     zRounds[availIdx].status = 2; // Set to bad
-    zRounds[availIdx].item = shopName;
+    zRounds[availIdx].note = shopName;
     zRounds[availIdx].encType = "";
     saveState();
     renderTab1();
@@ -907,6 +907,11 @@ function renderTab1(){
         input.placeholder = "ระบุหรือเลือกชื่อร้านค้า";
         input.value = cell.note;
         input.oninput = (e)=>{ cell.note = e.target.value; saveState(); };
+        if (cell.note && cell.note.trim() !== "" && window.SHOPS2 && window.SHOPS2.some(s => s.name === cell.note)) {
+          input.disabled = true;
+          input.style.background = "#f0f0f0";
+          input.style.color = "#555";
+        }
         input.onfocus = ()=>{
           // มือถือ: เลื่อน input ขึ้นด้านบนให้ dropdown มีที่แสดงโดยไม่บังช่องอื่น
           setTimeout(()=>{ input.scrollIntoView({behavior:'smooth', block:'start'}); }, 350);
