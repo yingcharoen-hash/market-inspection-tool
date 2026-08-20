@@ -150,23 +150,7 @@
   </div>
 </header>
 
-<!-- Global Store Search -->
-<div style="background:#fff; margin:16px 20px; padding:16px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.05);">
-  <h3 style="margin-bottom:12px; font-size:15px; color:var(--green); display:flex; align-items:center; gap:8px;">
-    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-    ค้นหาร้านค้า (ข้ามไปโซนอัตโนมัติ)
-  </h3>
-  <div class="field" style="position:relative;">
-    <input type="text" id="globalShopSearch" placeholder="พิมพ์ชื่อร้านค้าที่นี่..." autocomplete="off" oninput="handleGlobalSearch(this.value)" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border); font-size:15px; outline:none; color:#111; background:#fff;" />
-    <div id="globalSearchResults" style="display:none; position:absolute; top:100%; left:0; right:0; margin-top:4px; border:1px solid var(--border); border-radius:8px; max-height:250px; overflow-y:auto; background:#fff; z-index:999; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
-  </div>
-</div>
 
-<script>
-
-
-
-</script>
 
 
 <div class="tabs">
@@ -806,6 +790,27 @@ function handleInlineShopSearch(idx, query) {
     return;
   }
   
+  // Use mapApiZoneToTab1 logic locally
+  function localMapZone(apiZone) {
+    if (!apiZone) return null;
+    const z = apiZone.toLowerCase();
+    if (z.includes("กลาง")) return "อาคารกลาง";
+    if (z.includes("ปลาน้ำจืด") || z.includes("ปลาทะเล")) return "อาคารยาว ปลาน้ำจืด-ปลาทะเล";
+    if (z.includes("ท้ายเพชร") || (z.includes("อาคารยาว") && !z.includes("ปลา"))) return "อาคารยาว ท้ายเพชร"; // Fallback
+    if (z.includes("ผัก") && z.includes("2")) return "โซนอาคารผัก 2";
+    if (z.includes("60")) return "โซนอาคาร 60 ปี";
+    if (z.includes("เทคโฮม") || z.includes("take home")) return "โซนเทคโฮม";
+    if (z.includes("พลาซ่า") || z.includes("จงรักษ์")) return "พลาซ่า + ฟู้ดพลาซ่า + อาคารจงรักษ์";
+    
+    // Try direct includes
+    for (let tz of ZONES1) {
+      if (tz.includes(apiZone) || apiZone.includes(tz)) return tz;
+    }
+    
+    // If all fails, return null
+    return null;
+  }
+  
   const matches = window.SHOPS2.filter(s => s.name.includes(query) || s.zone.includes(query)).slice(0,20);
   if (matches.length === 0) {
     resDiv.innerHTML = '<div style="padding:10px;color:#666;">ไม่พบข้อมูลร้านนี้</div>';
@@ -833,16 +838,18 @@ function handleInlineShopSearch(idx, query) {
     
     const zones = grouped[name];
     zones.forEach(z => {
+      const mappedZ = localMapZone(z);
+      if(!mappedZ) return;
       const zBtn = document.createElement('button');
       zBtn.className = 'btn btn-outline';
       zBtn.style.padding = '4px 8px';
       zBtn.style.marginTop = '4px';
       zBtn.style.marginRight = '4px';
       zBtn.style.fontSize = '12px';
-      zBtn.textContent = z;
+      zBtn.textContent = mappedZ;
       zBtn.onclick = () => {
         state.tab1[idx].shopName = name;
-        state.tab1[idx].zone = z;
+        state.tab1[idx].zone = mappedZ;
         saveState();
         renderEncroachmentForm(idx);
       };
@@ -1019,6 +1026,244 @@ function renderEncroachmentForm(idx) {
   wrap.appendChild(card);
 }
 
+function updateProgress1(){
+  let total=0, done=0;
+  state.tab1.forEach(zoneArr=> zoneArr.forEach(c=>{ total++; if(c.status!==0) done++; }));
+  document.getElementById("prog1").style.width = (total? (done/total*100):0) + "%";
+  document.getElementById("progLabel1").textContent = done + "/" + total + " รอบ";
+}
 
+/* ========================= RENDER TAB 2 ========================= */
+function populateZoneSelect1(){
+  const sel = document.getElementById("zoneSelect1");
+  sel.innerHTML = "";
+  
+  let availableZones = ZONES1;
+  if (state._lockedShop && state._lockedShop.zones.length > 0) {
+    availableZones = state._lockedShop.zones;
+    if (availableZones.length === 1) {
+      sel.style.display = 'none';
+    } else {
+      sel.style.display = 'block';
+    }
+  } else {
+    sel.style.display = 'block';
+  }
 
+  availableZones.forEach(z=>{
+    const opt = document.createElement("option");
+    opt.value = z; opt.textContent = z;
+    sel.appendChild(opt);
+  });
+  sel.value = state._currentZone1 || ZONES1[0];
+  sel.onchange = ()=>{ state._currentZone1 = sel.value; renderTab1(); };
+}
 
+function populateZoneSelect2(){
+  const sel = document.getElementById("zoneSelect2");
+  sel.innerHTML = "";
+  ZONES2_FULL.forEach(z=>{
+    const opt = document.createElement("option");
+    opt.value = z; opt.textContent = z;
+    sel.appendChild(opt);
+  });
+  sel.value = state._currentZone2 || ZONES2_FULL[0];
+  sel.onchange = ()=>{ state._currentZone2 = sel.value; renderTab2Items(); };
+}
+
+function renderTab2Items(){
+  const sel = document.getElementById("zoneSelect2");
+  const zone = sel.value;
+  const data = ensureTab2Zone(zone);
+  const items = getItems2ForZone(zone);
+  const container = document.getElementById("itemsContainer2");
+  container.innerHTML = "";
+
+  items.forEach((item, idx)=>{
+    const entry = data.items[idx];
+    const card = document.createElement("div");
+    card.className = "card item-card";
+
+    const head = document.createElement("div");
+    head.className = "item-head";
+    const name = document.createElement("div");
+    name.className = "item-name";
+    name.textContent = item.name;
+    head.appendChild(name);
+
+    const btns = document.createElement("div");
+    btns.className = "status-btns";
+    const passBtn = document.createElement("button");
+    passBtn.className = "status-btn pass" + (entry.status===1?" active":"");
+    passBtn.textContent = "ผ่าน";
+    const failBtn = document.createElement("button");
+    failBtn.className = "status-btn fail" + (entry.status===2?" active":"");
+    failBtn.textContent = "ไม่ผ่าน";
+
+    passBtn.onclick = ()=>{ entry.status = entry.status===1?0:1; if(entry.status!==2) entry.note=""; saveState(); renderTab2Items(); };
+    failBtn.onclick = ()=>{ entry.status = entry.status===2?0:2; saveState(); renderTab2Items(); };
+
+    btns.appendChild(passBtn);
+    btns.appendChild(failBtn);
+    head.appendChild(btns);
+    card.appendChild(head);
+
+    const photoRow = document.createElement("div");
+    photoRow.className = "photo-row";
+    photoRow.appendChild(createPhotoSlot("รูปก่อนทำความสะอาด", entry.photos.before, (val)=>{ entry.photos.before = val; saveState(); renderTab2Items(); }));
+    photoRow.appendChild(createPhotoSlot("รูปหลังทำความสะอาดแล้ว", entry.photos.after, (val)=>{ entry.photos.after = val; saveState(); renderTab2Items(); }));
+    card.appendChild(photoRow);
+
+    if(entry.status===2){
+      const noteWrap = document.createElement("div");
+      noteWrap.className = "item-note show";
+      const label = document.createElement("label");
+      label.textContent = "ระบุปัญหาที่พบ / จุดที่ต้องทำความสะอาด";
+      noteWrap.appendChild(label);
+      const ta = document.createElement("textarea");
+      ta.placeholder = "รายละเอียดปัญหา...";
+      ta.value = entry.note;
+      ta.oninput = (e)=>{ entry.note = e.target.value; saveState(); };
+      noteWrap.appendChild(ta);
+      card.appendChild(noteWrap);
+    }
+
+    container.appendChild(card);
+  });
+
+  document.getElementById("zoneNote2").value = data.zoneNote || "";
+  document.getElementById("zoneNote2").oninput = (e)=>{ data.zoneNote = e.target.value; saveState(); };
+
+  updateProgress2(items, data);
+}
+
+function updateProgress2(items, data){
+  const total = items.length;
+  const done = data.items.filter(i=>i.status!==0).length;
+  document.getElementById("prog2").style.width = (total? (done/total*100):0) + "%";
+  document.getElementById("progLabel2").textContent = done + "/" + total + " รายการ";
+}
+
+/* ========================= RENDER TAB 3 ========================= */
+function populateZoneSelect3(){
+  const sel = document.getElementById("zoneSelect3");
+  sel.innerHTML = "";
+  ZONES3.forEach(z=>{
+    const opt = document.createElement("option");
+    opt.value = z; opt.textContent = z;
+    sel.appendChild(opt);
+  });
+  sel.value = state._currentZone3 || ZONES3[0];
+  sel.onchange = ()=>{ state._currentZone3 = sel.value; renderTab3Items(); };
+}
+
+function renderTab3Items(){
+  const sel = document.getElementById("zoneSelect3");
+  const zone = sel.value;
+  const data = ensureTab3Zone(zone);
+  const container = document.getElementById("itemsContainer3");
+  container.innerHTML = "";
+
+  ITEMS3.forEach((item, idx)=>{
+    const entry = data.items[idx];
+    const card = document.createElement("div");
+    card.className = "card item-card";
+
+    const head = document.createElement("div");
+    head.className = "item-head";
+    const nameWrap = document.createElement("div");
+    nameWrap.style.flex = "1";
+    const name = document.createElement("div");
+    name.className = "item-name";
+    name.textContent = item.name;
+    nameWrap.appendChild(name);
+    const why = document.createElement("div");
+    why.className = "why";
+    why.textContent = "ตรวจทำไม: " + item.why;
+    nameWrap.appendChild(why);
+    head.appendChild(nameWrap);
+
+    const btns = document.createElement("div");
+    btns.className = "status-btns";
+    const passBtn = document.createElement("button");
+    passBtn.className = "status-btn pass" + (entry.status===1?" active":"");
+    passBtn.textContent = "ปกติ";
+    const failBtn = document.createElement("button");
+    failBtn.className = "status-btn fail" + (entry.status===2?" active":"");
+    failBtn.textContent = "ผิดปกติ";
+
+    passBtn.onclick = ()=>{ entry.status = entry.status===1?0:1; if(entry.status!==2) entry.note=""; saveState(); renderTab3Items(); };
+    failBtn.onclick = ()=>{ entry.status = entry.status===2?0:2; saveState(); renderTab3Items(); };
+
+    btns.appendChild(passBtn);
+    btns.appendChild(failBtn);
+    head.appendChild(btns);
+    card.appendChild(head);
+
+    const photoRow = document.createElement("div");
+    photoRow.className = "photo-row";
+    photoRow.appendChild(createPhotoSlot("ภาพประกอบ (บัตร/ร้าน)", entry.photo, (val)=>{ entry.photo = val; saveState(); renderTab3Items(); }));
+    card.appendChild(photoRow);
+
+    if(entry.status===2){
+      const noteWrap = document.createElement("div");
+      noteWrap.className = "item-note show";
+      const label = document.createElement("label");
+      label.textContent = "ระบุรายละเอียด";
+      noteWrap.appendChild(label);
+      const ta = document.createElement("textarea");
+      ta.placeholder = "รายละเอียด...";
+      ta.value = entry.note;
+      ta.oninput = (e)=>{ entry.note = e.target.value; saveState(); };
+      noteWrap.appendChild(ta);
+      card.appendChild(noteWrap);
+    }
+
+    container.appendChild(card);
+  });
+
+  document.getElementById("zoneNote3").value = data.zoneNote || "";
+  document.getElementById("zoneNote3").oninput = (e)=>{ data.zoneNote = e.target.value; saveState(); };
+
+  updateProgress3(data);
+}
+
+function updateProgress3(data){
+  const total = ITEMS3.length;
+  const done = data.items.filter(i=>i.status!==0).length;
+  document.getElementById("prog3").style.width = (total? (done/total*100):0) + "%";
+  document.getElementById("progLabel3").textContent = done + "/" + total + " รายการ";
+}
+
+/* ========================= RESET ========================= */
+function resetTab(tab){
+  if(!confirm("ล้างข้อมูลของแท็บนี้ทั้งหมด สำหรับวันที่ " + state.date + " ใช่หรือไม่?")) return;
+  if(tab==="tab1") state.tab1 = [];
+  if(tab==="tab2") state.tab2 = {};
+  if(tab==="tab3") state.tab3 = {};
+  saveState();
+  renderAll();
+  showToast("ล้างข้อมูลเรียบร้อย");
+}
+
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>{ t.classList.remove("show"); }, 3000);
+}
+
+function renderAll(){
+  setGuardSelectValue();
+  updateDateLabel();
+  renderTab1();
+  populateZoneSelect1();
+  populateZoneSelect2();
+  renderTab2Items();
+  populateZoneSelect3();
+  renderTab3Items();
+}
+renderAll();
+</script>
+</body>
+</html>
