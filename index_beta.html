@@ -211,6 +211,11 @@ function selectGlobalShop(shopName, zoneName) {
     return;
   }
   
+  // Update zoneSelect1
+  state._currentZone1 = zoneName;
+  const sel1 = document.getElementById("zoneSelect1");
+  if(sel1) sel1.value = zoneName;
+
   // 3. Find first available round (status=0) in this zone
   const zRounds = state.tab1[zi];
   const availIdx = zRounds.findIndex(cell => cell.status === 0);
@@ -284,7 +289,8 @@ document.addEventListener('click', (e) => {
       <div class="progress-label" id="progLabel1">0/0 รอบ</div>
     </div>
 
-    <div id="zonesContainer1"></div>
+    <select id="zoneSelect1" class="zone-select" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border); font-size:15px; margin-bottom:16px; background:#fff; outline:none;"></select>
+<div id="zonesContainer1"></div>
 
     <div class="actions">
       <button class="btn btn-primary" onclick="sendToGoogleSheet()">บันทึกข้อมูล</button>
@@ -398,7 +404,7 @@ const ITEMS3 = [
 const STORAGE_KEY = "marketInspectionState";
 const GUARD_KEY = "marketInspectionGuardName";
 const GUARD_LIST_KEY = "marketInspectionGuardList";
-const SHOP_LIST_KEY  = "marketInspectionShopList";
+const SHOP_LIST_KEY  = "marketInspectionShopList2";
 let state = loadState();
 
 function todayStr(){
@@ -783,7 +789,14 @@ function createPhotoSlot(labelText, dataUrl, onChange){
 function renderTab1(){
   const container = document.getElementById("zonesContainer1");
   container.innerHTML = "";
-  ZONES1.forEach((zone, zi)=>{
+  
+  if(!state._currentZone1) state._currentZone1 = ZONES1[0];
+  const zone = state._currentZone1;
+  const zi = ZONES1.indexOf(zone);
+  if(zi === -1) return;
+  
+  { // scoping block to match the original forEach block variables
+
     const card = document.createElement("div");
     card.className = "card";
     const title = document.createElement("div");
@@ -910,6 +923,18 @@ function updateProgress1(){
 }
 
 /* ========================= RENDER TAB 2 ========================= */
+function populateZoneSelect1(){
+  const sel = document.getElementById("zoneSelect1");
+  sel.innerHTML = "";
+  ZONES1.forEach(z=>{
+    const opt = document.createElement("option");
+    opt.value = z; opt.textContent = z;
+    sel.appendChild(opt);
+  });
+  sel.value = state._currentZone1 || ZONES1[0];
+  sel.onchange = ()=>{ state._currentZone1 = sel.value; renderTab1(); };
+}
+
 function populateZoneSelect2(){
   const sel = document.getElementById("zoneSelect2");
   sel.innerHTML = "";
@@ -1108,6 +1133,7 @@ function renderAll(){
   setGuardSelectValue();
   updateDateLabel();
   renderTab1();
+  populateZoneSelect1();
   populateZoneSelect2();
   renderTab2Items();
   populateZoneSelect3();
