@@ -497,11 +497,11 @@ function buildSheetRows(){
 
   state.tab1.forEach(c => {
     if(c && c.status !== 0 && c.zone){
-      const loc = (c.shopName ? c.shopName + " (" + c.zone + ")" : c.zone);
       rows.push({
-        date: state.date, guardName: guard, section:"1. ตรวจรุกล้ำ", location: loc, item:"รอบ " + c.round,
+        date: state.date, guardName: guard, section:"1. ตรวจรุกล้ำ", location: c.zone, item:"รอบ " + c.round,
         status: c.status===1 ? "ตรวจแล้ว ไม่พบรุกล้ำ" : "รุกล้ำ",
         encType: c.encType || "",
+        shopName: c.shopName || "",
         note: c.note || "",
         photos: c.status===2 ? [
           {name:"shop_"+c.zone+"_"+c.round+".jpg", base64:(c.photos&&c.photos.shop)||null},
