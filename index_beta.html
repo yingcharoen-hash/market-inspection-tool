@@ -570,10 +570,18 @@ async function sendToGoogleSheet(){
   }
   const rows = buildSheetRows();
   if(rows.length === 0){
-    showToast("ยังไม่มีข้อมูลที่ตรวจแล้วสำหรับวันนี้");
-    return;
-  }
-  if(!navigator.onLine){
+      showToast("ยังไม่มีข้อมูลที่ตรวจแล้วสำหรับวันนี้");
+      return;
+    }
+    
+    // Validate Encroachment Type
+    const missingEncType = rows.find(r => r.section === "1. ตรวจรุกล้ำ" && r.status === "พบการรุกล้ำ" && !r.encType);
+    if (missingEncType) {
+      showToast(`กรุณาระบุประเภทรุกล้ำสำหรับ: โซน ${missingEncType.location} (${missingEncType.item})`);
+      return;
+    }
+
+    if(!navigator.onLine){
     showToast("ไม่มีสัญญาณ — ข้อมูลเซฟไว้แล้ว กดส่งอีกครั้งเมื่อมีอินเตอร์เน็ต");
     return;
   }
