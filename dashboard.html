@@ -784,7 +784,7 @@ function renderHeatmap(rows) {
 // ── Heatmap: zone × round (encroachment) ─────
 function renderHeatmapEnc(rows, el) {
   const encRows = rows.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
-  const zones  = KNOWN_ZONES;
+  const zones = [...new Set(allData.filter(r => r[C.section] === '1. ตรวจรุกล้ำ').map(r => r[C.location]).filter(Boolean))].sort();
   const rounds = KNOWN_ROUNDS;
 
   const lookup = {};
@@ -849,8 +849,8 @@ function renderHeatmapItems(rows, el, secKey, knownZones, knownItems, badStatus,
     lookup[k].push(r);
   });
 
-  // Only show zones that appear in actual data (in KNOWN order)
-  const activeZones = knownZones.filter(z => secRows.some(r => r[C.location] === z));
+  // Dynamically extract all historical zones for this section
+  const activeZones = [...new Set(allData.filter(r => r[C.section] === secKey).map(r => r[C.location]).filter(Boolean))].sort();
   if (!activeZones.length) { el.innerHTML = '<div class="msg">ไม่มีข้อมูลในหมวดนี้</div>'; return; }
 
   let html = `<div class="heatmap-wrap"><table class="heatmap-table">
@@ -946,7 +946,7 @@ function renderRoundCompletionByZone(rows, el, secKey, knownZones) {
   if (!secRows.length) { el.innerHTML = '<div class="msg">ไม่มีข้อมูล</div>'; return; }
 
   const guards = [...new Set(secRows.map(r => r[C.guard]).filter(Boolean))].sort();
-  const zones  = knownZones.filter(z => secRows.some(r => r[C.location] === z));
+  const zones = [...new Set(allData.filter(r => r[C.section] === secKey).map(r => r[C.location]).filter(Boolean))].sort();
 
   const guardZones = {};
   secRows.forEach(r => {
