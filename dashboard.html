@@ -993,7 +993,7 @@ function renderRepeatTable() {
 
 // Repeat table: encroachment (by shop note)
 function renderRepeatTableEnc() {
-  const encBad = rows.filter(r=>r[C.section]==='1. ตรวจรุกล้ำ'&&r[C.status]==='พบการรุกล้ำ');
+  const encBad = getFiltered().filter(r=>r[C.section]==='1. ตรวจรุกล้ำ'&&r[C.status]==='พบการรุกล้ำ');
   const map = {};
   encBad.forEach(r=>{
     const label=(r[C.shop] || r[C.note] || '').trim(); if(!label) return;
@@ -1022,7 +1022,7 @@ function renderRepeatTableEnc() {
 
 // Repeat table: ความสะอาด / บัตรสมาชิก (by zone+item)
 function renderRepeatTableItems(secKey, badStatus, colLabel) {
-  const bad = rows.filter(r=>r[C.section]===secKey&&r[C.status]===badStatus);
+  const bad = getFiltered().filter(r=>r[C.section]===secKey&&r[C.status]===badStatus);
   const map = {};
   bad.forEach(r=>{
     const key=r[C.location]+'||'+r[C.item];
