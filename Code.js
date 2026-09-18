@@ -13,27 +13,7 @@ function doPost(e) {
   const data = JSON.parse(e.postData.contents);
   const folder = getOrCreateFolder("ภาพตรวจตลาดสด");
 
-  // Read existing data to check for duplicates
-  const lastRow = sheet.getLastRow();
-  let existingData = [];
-  if (lastRow > 1) {
-    existingData = sheet.getRange(2, 1, lastRow - 1, 5).getValues(); 
-  }
-
-  const isDuplicate = (r) => {
-    return existingData.some(existing => 
-      String(existing[0]) === String(r.date) &&
-      String(existing[1]) === String(r.guardName || "") &&
-      String(existing[2]) === String(r.section) &&
-      String(existing[3]) === String(r.location) &&
-      String(existing[4]) === String(r.item)
-    );
-  };
-
   data.rows.forEach(row => {
-    if (isDuplicate(row)) {
-      return; // Skip duplicate
-    }
 
     const links = (row.photos || []).map(p => {
       if (!p.base64) return "";
@@ -47,7 +27,6 @@ function doPost(e) {
     ];
     
     sheet.appendRow(newRow);
-    existingData.push(newRow.slice(0, 5)); // Add to existingData to prevent duplicates within the same batch
   });
 
   // ล้าง cache ทั้งหมดเมื่อมีข้อมูลใหม่
@@ -272,4 +251,20 @@ function removeDuplicatesAndMoveToSheet3() {
   if (uniqueData.length > 0) {
     mainSheet.getRange(2, 1, uniqueData.length, lastCol).setValues(uniqueData);
   }
+}
+
+function restoreFromSheet3() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const mainSheet = ss.getSheets()[0];
+  const sheet3 = ss.getSheetByName("ชีต3");
+  
+  if (!sheet3) return; 
+  
+  const lastRow3 = sheet3.getLastRow();
+  if (lastRow3 <= 1) return; 
+  
+  const dataToRestore = sheet3.getRange(2, 1, lastRow3 - 1, sheet3.getLastColumn()).getValues();
+  
+  mainSheet.getRange(mainSheet.getLastRow() + 1, 1, dataToRestore.length, dataToRestore[0].length).setValues(dataToRestore);
+  sheet3.getRange(2, 1, lastRow3 - 1, sheet3.getLastColumn()).clearContent();
 }
