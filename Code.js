@@ -262,7 +262,8 @@ function moveDuplicatesToDuplicateSheet() {
   const lastCol = mainSheet.getLastColumn();
   if (lastRow <= 1) return;
   
-  const data = mainSheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  // Use getDisplayValues to ensure dates are read as strings, avoiding timezone/formatting issues!
+  const data = mainSheet.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
   
   const parseTHDate = (str) => {
     if(!str) return 0;
@@ -276,7 +277,8 @@ function moveDuplicatesToDuplicateSheet() {
   };
 
   const seenMap = new Map(); 
-  const duplicateIndices = []; 
+  const uniqueData = [];
+  const duplicateData = []; 
   
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
@@ -289,50 +291,27 @@ function moveDuplicatesToDuplicateSheet() {
       const diffMs = Math.abs(rTime - eTime);
       if (diffMs <= 5 * 60 * 1000) {
          // Duplicate double submission within 5 mins
-         duplicateIndices.push(i);
-         // Write to duplicate sheet immediately
-         sheetDuplicate.appendRow(row);
+         duplicateData.push(row);
          seenMap.set(key, rTime);
       } else {
+         // Legit submission more than 5 mins apart
          seenMap.set(key, rTime);
+         uniqueData.push(row);
       }
     } else {
       seenMap.set(key, rTime);
+      uniqueData.push(row);
     }
   }
   
-  // Delete rows from bottom to top to preserve formatting and formulas
-  // Since the condition is strict (within 5 mins), there shouldn't be too many duplicates, so it won't time out.
-  for (let i = duplicateIndices.length - 1; i >= 0; i--) {
-    const rowIndex = duplicateIndices[i] + 2; 
-    mainSheet.deleteRow(rowIndex);
-  }
-}
-
-function recoverMissingDates() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheets()[0];
-  const lastRow = sheet.getLastRow();
-  if (lastRow <= 1) return;
-  
-  const data = sheet.getRange(2, 1, lastRow - 1, 11).getValues();
-  const datesToWrite = [];
-  
-  for (let i = 0; i < data.length; i++) {
-    const row = data[i];
-    let dateVal = row[0];
-    const timestampStr = row[10];
-    
-    // Check if date is empty or invalid
-    if ((!dateVal || String(dateVal).trim() === "") && timestampStr) {
-      // Extract just the date part from timestamp (e.g. "18/09/2026")
-      dateVal = String(timestampStr).split(' ')[0];
-    } else if (dateVal instanceof Date) {
-      // If it's a date object that sheets got confused by, try to format it back
-      // But actually if it's visible as blank, row[0] is probably ""
-    }
-    datesToWrite.push([dateVal]);
+  // Batch write duplicates to ข้อมูลซ้ำ
+  if (duplicateData.length > 0) {
+    sheetDuplicate.getRange(sheetDuplicate.getLastRow() + 1, 1, duplicateData.length, lastCol).setValues(duplicateData);
   }
   
-  sheet.getRange(2, 1, datesToWrite.length, 1).setValues(datesToWrite);
+  // Clear main sheet and write unique data back (Fast batch update)
+  mainSheet.getRange(2, 1, lastRow - 1, lastCol).clearContent();
+  if (uniqueData.length > 0) {
+    mainSheet.getRange(2, 1, uniqueData.length, lastCol).setValues(uniqueData);
+  }
 }
