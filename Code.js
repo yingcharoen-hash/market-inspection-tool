@@ -13,7 +13,47 @@ function doPost(e) {
   const data = JSON.parse(e.postData.contents);
   const folder = getOrCreateFolder("ภาพตรวจตลาดสด");
 
+  const lastRow = sheet.getLastRow();
+  let existingData = [];
+  if (lastRow > 1) {
+    const startRow = Math.max(2, lastRow - 200);
+    const numRows = lastRow - startRow + 1;
+    existingData = sheet.getRange(startRow, 1, numRows, 11).getValues(); 
+  }
+
+  const parseTHDate = (str) => {
+    if(!str) return 0;
+    try {
+      const parts = String(str).split(' ');
+      const dParts = parts[0].split('/');
+      if (dParts.length !== 3) return 0;
+      const iso = `${dParts[2]}-${dParts[1]}-${dParts[0]}T${parts[1]||'00:00:00'}`;
+      return new Date(iso).getTime();
+    } catch(e) { return 0; }
+  };
+
+  const isDuplicate = (r) => {
+    const rTime = parseTHDate(r.timestamp);
+    if (!rTime) return false;
+    
+    return existingData.some(existing => {
+      const eTime = parseTHDate(existing[10]);
+      if (!eTime) return false;
+      const diffMs = Math.abs(rTime - eTime);
+      
+      return diffMs <= 5 * 60 * 1000 && // Within 5 minutes
+        String(existing[0]) === String(r.date) &&
+        String(existing[1]) === String(r.guardName || "") &&
+        String(existing[2]) === String(r.section) &&
+        String(existing[3]) === String(r.location) &&
+        String(existing[4]) === String(r.item);
+    });
+  };
+
   data.rows.forEach(row => {
+    if (isDuplicate(row)) {
+      return; // Skip duplicate double submission
+    }
 
     const links = (row.photos || []).map(p => {
       if (!p.base64) return "";
@@ -27,6 +67,7 @@ function doPost(e) {
     ];
     
     sheet.appendRow(newRow);
+    existingData.push([...newRow.slice(0, 5), null, null, null, null, null, newRow[10]]);
   });
 
   // ล้าง cache ทั้งหมดเมื่อมีข้อมูลใหม่
