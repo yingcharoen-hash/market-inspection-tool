@@ -13,17 +13,41 @@ function doPost(e) {
   const data = JSON.parse(e.postData.contents);
   const folder = getOrCreateFolder("ภาพตรวจตลาดสด");
 
+  // Read existing data to check for duplicates
+  const lastRow = sheet.getLastRow();
+  let existingData = [];
+  if (lastRow > 1) {
+    existingData = sheet.getRange(2, 1, lastRow - 1, 5).getValues(); 
+  }
+
+  const isDuplicate = (r) => {
+    return existingData.some(existing => 
+      String(existing[0]) === String(r.date) &&
+      String(existing[1]) === String(r.guardName || "") &&
+      String(existing[2]) === String(r.section) &&
+      String(existing[3]) === String(r.location) &&
+      String(existing[4]) === String(r.item)
+    );
+  };
+
   data.rows.forEach(row => {
+    if (isDuplicate(row)) {
+      return; // Skip duplicate
+    }
+
     const links = (row.photos || []).map(p => {
       if (!p.base64) return "";
       return saveImage(p.base64, p.name, folder);
     }).filter(x => x);
 
-    sheet.appendRow([
+    const newRow = [
       row.date, row.guardName || "", row.section, row.location,
       row.item, row.status, row.encType || "",
       row.shopName || "", links[0] || "", links[1] || "", row.timestamp, row.note || ""
-    ]);
+    ];
+    
+    sheet.appendRow(newRow);
+    existingData.push(newRow.slice(0, 5)); // Add to existingData to prevent duplicates within the same batch
   });
 
   // ล้าง cache ทั้งหมดเมื่อมีข้อมูลใหม่
@@ -201,4 +225,43 @@ function setupTrigger() {
     .timeBased()
     .everyMinutes(5)
     .create();
+}
+function removeDuplicatesAndMoveToSheet3() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const mainSheet = ss.getSheets()[0];
+  let sheet3 = ss.getSheetByName("ชีต3");
+  
+  if (!sheet3) {
+    sheet3 = ss.insertSheet("ชีต3");
+    // Copy headers
+    const headers = mainSheet.getRange(1, 1, 1, mainSheet.getLastColumn()).getValues();
+    sheet3.appendRow(headers[0]);
+  }
+  
+  const lastRow = mainSheet.getLastRow();
+  if (lastRow <= 1) return;
+  
+  const data = mainSheet.getRange(2, 1, lastRow - 1, mainSheet.getLastColumn()).getValues();
+  
+  const seen = new Set();
+  const duplicateIndices = []; 
+  
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    // Key: Date + Guard + Section + Location + Item
+    const key = String(row[0]) + "|" + String(row[1]) + "|" + String(row[2]) + "|" + String(row[3]) + "|" + String(row[4]);
+    
+    if (seen.has(key)) {
+      duplicateIndices.push(i);
+      sheet3.appendRow(row);
+    } else {
+      seen.add(key);
+    }
+  }
+  
+  // Delete rows from bottom to top to avoid shifting row numbers
+  for (let i = duplicateIndices.length - 1; i >= 0; i--) {
+    const rowIndex = duplicateIndices[i] + 2; 
+    mainSheet.deleteRow(rowIndex);
+  }
 }
