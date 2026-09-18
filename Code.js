@@ -276,8 +276,7 @@ function moveDuplicatesToDuplicateSheet() {
   };
 
   const seenMap = new Map(); 
-  const uniqueData = [];
-  const duplicateData = []; 
+  const duplicateIndices = []; 
   
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
@@ -290,28 +289,22 @@ function moveDuplicatesToDuplicateSheet() {
       const diffMs = Math.abs(rTime - eTime);
       if (diffMs <= 5 * 60 * 1000) {
          // Duplicate double submission within 5 mins
-         duplicateData.push(row);
+         duplicateIndices.push(i);
+         // Write to duplicate sheet immediately
+         sheetDuplicate.appendRow(row);
          seenMap.set(key, rTime);
       } else {
-         // Legit submission more than 5 mins apart
          seenMap.set(key, rTime);
-         uniqueData.push(row);
       }
     } else {
       seenMap.set(key, rTime);
-      uniqueData.push(row);
     }
   }
   
-  // Batch write duplicates to ข้อมูลซ้ำ
-  if (duplicateData.length > 0) {
-    sheetDuplicate.getRange(sheetDuplicate.getLastRow() + 1, 1, duplicateData.length, lastCol).setValues(duplicateData);
-  }
-  
-  // Clear main sheet and write unique data back
-  // Preserve headers (row 1)
-  mainSheet.getRange(2, 1, lastRow - 1, lastCol).clearContent();
-  if (uniqueData.length > 0) {
-    mainSheet.getRange(2, 1, uniqueData.length, lastCol).setValues(uniqueData);
+  // Delete rows from bottom to top to preserve formatting and formulas
+  // Since the condition is strict (within 5 mins), there shouldn't be too many duplicates, so it won't time out.
+  for (let i = duplicateIndices.length - 1; i >= 0; i--) {
+    const rowIndex = duplicateIndices[i] + 2; 
+    mainSheet.deleteRow(rowIndex);
   }
 }
