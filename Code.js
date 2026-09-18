@@ -239,12 +239,14 @@ function removeDuplicatesAndMoveToSheet3() {
   }
   
   const lastRow = mainSheet.getLastRow();
+  const lastCol = mainSheet.getLastColumn();
   if (lastRow <= 1) return;
   
-  const data = mainSheet.getRange(2, 1, lastRow - 1, mainSheet.getLastColumn()).getValues();
+  const data = mainSheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
   
   const seen = new Set();
-  const duplicateIndices = []; 
+  const uniqueData = [];
+  const duplicateData = []; 
   
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
@@ -252,16 +254,22 @@ function removeDuplicatesAndMoveToSheet3() {
     const key = String(row[0]) + "|" + String(row[1]) + "|" + String(row[2]) + "|" + String(row[3]) + "|" + String(row[4]);
     
     if (seen.has(key)) {
-      duplicateIndices.push(i);
-      sheet3.appendRow(row);
+      duplicateData.push(row);
     } else {
       seen.add(key);
+      uniqueData.push(row);
     }
   }
   
-  // Delete rows from bottom to top to avoid shifting row numbers
-  for (let i = duplicateIndices.length - 1; i >= 0; i--) {
-    const rowIndex = duplicateIndices[i] + 2; 
-    mainSheet.deleteRow(rowIndex);
+  // Batch write duplicates to ชีต3
+  if (duplicateData.length > 0) {
+    sheet3.getRange(sheet3.getLastRow() + 1, 1, duplicateData.length, lastCol).setValues(duplicateData);
+  }
+  
+  // Clear main sheet and write unique data back
+  // Preserve headers (row 1)
+  mainSheet.getRange(2, 1, lastRow - 1, lastCol).clearContent();
+  if (uniqueData.length > 0) {
+    mainSheet.getRange(2, 1, uniqueData.length, lastCol).setValues(uniqueData);
   }
 }
