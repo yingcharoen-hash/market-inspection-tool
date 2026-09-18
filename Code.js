@@ -46,7 +46,11 @@ function doPost(e) {
         String(existing[1]) === String(r.guardName || "") &&
         String(existing[2]) === String(r.section) &&
         String(existing[3]) === String(r.location) &&
-        String(existing[4]) === String(r.item);
+        String(existing[4]) === String(r.item) &&
+        String(existing[5]) === String(r.status) &&
+        String(existing[6]) === String(r.encType || "") &&
+        String(existing[7]) === String(r.shopName || "") &&
+        String(existing[11] || "") === String(r.note || "");
     });
   };
 
@@ -253,7 +257,6 @@ function moveDuplicatesToDuplicateSheet() {
   
   if (!sheetDuplicate) {
     sheetDuplicate = ss.insertSheet("ข้อมูลซ้ำ");
-    // Copy headers
     const headers = mainSheet.getRange(1, 1, 1, mainSheet.getLastColumn()).getValues();
     sheetDuplicate.appendRow(headers[0]);
   }
@@ -262,7 +265,6 @@ function moveDuplicatesToDuplicateSheet() {
   const lastCol = mainSheet.getLastColumn();
   if (lastRow <= 1) return;
   
-  // Use getDisplayValues to ensure dates are read as strings, avoiding timezone/formatting issues!
   const data = mainSheet.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
   
   const parseTHDate = (str) => {
@@ -282,19 +284,36 @@ function moveDuplicatesToDuplicateSheet() {
   
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
-    // Key: Date + Guard + Section + Location + Item
-    const key = String(row[0]) + "|" + String(row[1]) + "|" + String(row[2]) + "|" + String(row[3]) + "|" + String(row[4]);
+    // Strict Key: Date(0) + Guard(1) + Section(2) + Location(3) + Item(4) + Status(5) + EncType(6) + ShopName(7) + Note(11)
+    const key = String(row[0]).trim() + "|" + 
+                String(row[1]).trim() + "|" + 
+                String(row[2]).trim() + "|" + 
+                String(row[3]).trim() + "|" + 
+                String(row[4]).trim() + "|" + 
+                String(row[5]).trim() + "|" + 
+                String(row[6]).trim() + "|" + 
+                String(row[7]).trim() + "|" + 
+                String(row[11]).trim();
+                
     const rTime = parseTHDate(row[10]);
     
     if (seenMap.has(key)) {
       const eTime = seenMap.get(key);
-      const diffMs = Math.abs(rTime - eTime);
-      if (diffMs <= 5 * 60 * 1000) {
-         // Duplicate double submission within 5 mins
-         duplicateData.push(row);
-         seenMap.set(key, rTime);
+      let isDuplicate = false;
+      
+      // If timestamps are valid, check if within 5 mins
+      if (rTime > 0 && eTime > 0) {
+        if (Math.abs(rTime - eTime) <= 5 * 60 * 1000) {
+          isDuplicate = true;
+        }
       } else {
-         // Legit submission more than 5 mins apart
+        // If timestamps are missing but the strict key matches exactly, treat as duplicate
+        isDuplicate = true;
+      }
+      
+      if (isDuplicate) {
+         duplicateData.push(row);
+      } else {
          seenMap.set(key, rTime);
          uniqueData.push(row);
       }
@@ -304,12 +323,10 @@ function moveDuplicatesToDuplicateSheet() {
     }
   }
   
-  // Batch write duplicates to ข้อมูลซ้ำ
   if (duplicateData.length > 0) {
     sheetDuplicate.getRange(sheetDuplicate.getLastRow() + 1, 1, duplicateData.length, lastCol).setValues(duplicateData);
   }
   
-  // Clear main sheet and write unique data back (Fast batch update)
   mainSheet.getRange(2, 1, lastRow - 1, lastCol).clearContent();
   if (uniqueData.length > 0) {
     mainSheet.getRange(2, 1, uniqueData.length, lastCol).setValues(uniqueData);
