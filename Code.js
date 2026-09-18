@@ -308,3 +308,31 @@ function moveDuplicatesToDuplicateSheet() {
     mainSheet.deleteRow(rowIndex);
   }
 }
+
+function recoverMissingDates() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheets()[0];
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return;
+  
+  const data = sheet.getRange(2, 1, lastRow - 1, 11).getValues();
+  const datesToWrite = [];
+  
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    let dateVal = row[0];
+    const timestampStr = row[10];
+    
+    // Check if date is empty or invalid
+    if ((!dateVal || String(dateVal).trim() === "") && timestampStr) {
+      // Extract just the date part from timestamp (e.g. "18/09/2026")
+      dateVal = String(timestampStr).split(' ')[0];
+    } else if (dateVal instanceof Date) {
+      // If it's a date object that sheets got confused by, try to format it back
+      // But actually if it's visible as blank, row[0] is probably ""
+    }
+    datesToWrite.push([dateVal]);
+  }
+  
+  sheet.getRange(2, 1, datesToWrite.length, 1).setValues(datesToWrite);
+}
