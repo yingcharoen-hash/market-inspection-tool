@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบจัดการบทลงโทษ</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f6fa; margin: 0; padding: 20px; color: #2f3640; }
+    .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    h2 { color: #1B5E3B; border-bottom: 2px solid #EBF5EE; padding-bottom: 10px; margin-top: 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+    th, td { padding: 12px 15px; border-bottom: 1px solid #dcdde1; text-align: left; }
+    th { background: #f5f6fa; font-weight: 600; color: #718093; text-transform: uppercase; font-size: 12px; }
+    .btn { background: #1B5E3B; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .btn:hover { background: #2D7A50; }
+    
+    /* Modal Styles */
+    .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+    .modal-content { background-color: #fff; margin: 5% auto; padding: 20px; border-radius: 8px; width: 500px; max-width: 90%; }
+    .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+    .close:hover { color: #000; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; }
+    .form-group select, .form-group input[type="text"] { width: 100%; padding: 8px; border: 1px solid #dcdde1; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📋 ตารางจัดการบทลงโทษร้านค้า</h2>
+    <div style="display:flex; gap:15px; margin-bottom:15px; background:#f5f6fa; padding:10px; border-radius:4px; flex-wrap:wrap; align-items:center;">
+      <div><label style="font-size:12px;font-weight:bold;">เริ่มวันที่:</label> <input type="date" id="filterStart" onchange="applyFilter()" style="padding:4px; border:1px solid #ccc; border-radius:3px;"></div>
+      <div><label style="font-size:12px;font-weight:bold;">ถึงวันที่:</label> <input type="date" id="filterEnd" onchange="applyFilter()" style="padding:4px; border:1px solid #ccc; border-radius:3px;"></div>
+      <div><label style="font-size:12px;font-weight:bold;">โซน:</label> 
+        <select id="filterZone" onchange="applyFilter()" style="padding:4px; border:1px solid #ccc; border-radius:3px;">
+          <option value="">ทั้งหมด</option>
+          <option value="อาคารยาว ปลาน้ำจืด-ปลาทะเล">อาคารยาว ปลาน้ำจืด-ปลาทะเล</option>
+          <option value="อาคารยาว ท้ายเพชร">อาคารยาว ท้ายเพชร</option>
+          <option value="อาคารกลาง">อาคารกลาง</option>
+          <option value="พลาซ่า + ฟู้ดพลาซ่า + อาคารจงรักษ์">พลาซ่า + ฟู้ดพลาซ่า + อาคารจงรักษ์</option>
+          <option value="โซนอาคารผัก 2">โซนอาคารผัก 2</option>
+          <option value="โซนอาคาร 60 ปี">โซนอาคาร 60 ปี</option>
+          <option value="โซนเทคโฮม">โซนเทคโฮม</option>
+        </select>
+      </div>
+      <div><label style="font-size:12px;font-weight:bold;">ชื่อร้าน:</label> <input type="text" id="filterShop" onkeyup="applyFilter()" placeholder="พิมพ์ค้นหาชื่อร้าน..." style="padding:4px; border:1px solid #ccc; border-radius:3px; width:150px;"></div>
+    </div>
+    <div id="loading">กำลังโหลดข้อมูล...</div>
+    <div style="overflow-x:auto;">
+      <table id="dataTable" style="display:none;">
+        <thead>
+          <tr>
+            <th>วันที่ / เวลา</th>
+            <th>โซน / ร้านค้า</th>
+            <th>รายการรุกล้ำ</th>
+            <th>สถานะปัจจุบัน</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- The Modal -->
+  <div id="actionModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h3 style="margin-top:0; color:#1B5E3B;">บันทึกการดำเนินการบทลงโทษ</h3>
+      <p id="modalShopName" style="font-weight:bold; color:#e1b12c; margin-bottom: 5px;"></p>
+      
+      <div id="modalPhotoContainer" style="margin-bottom:10px; text-align:center;"></div>
+      
+      <div id="historyContainer"></div>
+      
+      <div class="form-group">
+        <label>ระบุบทลงโทษ (Action Taken):</label>
+        <select id="penaltyStep">
+          <option value="แก้ไขหน้างานเรียบร้อย (ไม่ลงโทษ)">แก้ไขหน้างานเรียบร้อย (ไม่ลงโทษ)</option>
+          <option value="ขั้นที่ 1: แจ้งตักเตือนด้วยวาจา">ขั้นที่ 1: แจ้งตักเตือนด้วยวาจา</option>
+          <option value="ขั้นที่ 2: ออกใบแจ้งเตือน">ขั้นที่ 2: ออกใบแจ้งเตือน</option>
+          <option value="ขั้นที่ 3: ปรับเงิน 500 บาท">ขั้นที่ 3: ปรับเงิน 500 บาท</option>
+          <option value="ขั้นที่ 4: ปรับ 10% ของค่าเช่า">ขั้นที่ 4: ปรับ 10% ของค่าเช่า</option>
+          <option value="ขั้นที่ 5: ย้ายพื้นที่เช่า">ขั้นที่ 5: ย้ายพื้นที่เช่า</option>
+          <option value="ขั้นที่ 6: ยกเลิกสัญญาเช่า">ขั้นที่ 6: ยกเลิกสัญญาเช่า</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>รายละเอียดเพิ่มเติม (เช่น ยอดเงินปรับ, หมายเหตุ):</label>
+        <input type="text" id="actionNote" placeholder="พิมพ์รายละเอียด...">
+      </div>
+      
+      <div class="form-group">
+        <label>อัปโหลดหลักฐาน (ใบเตือน/สลิปโอนเงิน):</label>
+        <input type="file" id="evidenceFile" accept="image/*,application/pdf">
+      </div>
+
+      <button class="btn" style="width:100%; padding:10px; margin-top:10px;" onclick="submitAction()">บันทึกข้อมูล</button>
+    </div>
+  </div>
+
+  <script>
+    let allData = [];
+    let pendingData = [];
+    let filteredData = [];
+    let targetRow = null;
+    
+    window.onload = function() {
+      loadChunk(0);
+    };
+
+    function loadChunk(offset) {
+      if (offset === 0) document.getElementById('loading').innerHTML = 'กำลังโหลดข้อมูล (0%)...';
+      google.script.run
+        .withSuccessHandler(function(data) {
+           storeChunk(data, offset);
+        })
+        .withFailureHandler(function(err) {
+           document.getElementById('loading').innerHTML = '<div style="color:red; text-align:center;">เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message + '<br>โปรดรีเฟรชหน้าเว็บ หรือแจ้งผู้ดูแลระบบ</div>';
+        })
+        .getPendingActions(offset, 1000);
+    }
+
+    function storeChunk(data, offset) {
+      try {
+        let res = typeof data === 'string' ? JSON.parse(data) : data;
+        if (res.error) {
+           document.getElementById('loading').innerHTML = '<div style="color:red; text-align:center;">เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: ' + res.error + '</div>';
+           return;
+        }
+        allData = allData.concat(res.rows || []);
+        
+        if (res.hasMore) {
+           let percent = Math.round((allData.length / res.total) * 100);
+           document.getElementById('loading').innerHTML = `กำลังโหลดข้อมูลย้อนหลัง (${percent}%)...`;
+           loadChunk(offset + 1000);
+        } else {
+           // กรองเฉพาะรายการที่ยังไม่ลงโทษเพื่อแสดงในตารางหลัก
+           pendingData = allData.filter(r => !r['สถานะบทลงโทษ'] || r['สถานะบทลงโทษ'] === '');
+           applyFilter();
+        }
+      } catch (e) {
+        document.getElementById('loading').innerHTML = '<div style="color:red; text-align:center;">เกิดข้อผิดพลาดในการแปลงข้อมูล: ' + e.message + '<br>' + (typeof data === 'string' ? data.substring(0, 100) : '') + '</div>';
+      }
+    }
+
+    function applyFilter() {
+      const fStart = document.getElementById('filterStart').value;
+      const fEnd = document.getElementById('filterEnd').value;
+      const fZone = document.getElementById('filterZone').value;
+      const fShop = document.getElementById('filterShop').value.toLowerCase();
+
+      filteredData = pendingData.filter(r => {
+        let pass = true;
+        let rowDateStr = r['วันที่'] || '';
+        let dObj = new Date(r['เวลาบันทึก']);
+        if(!isNaN(dObj)) {
+            const tzDate = new Date(dObj.getTime() + (7 * 60 * 60 * 1000));
+            rowDateStr = tzDate.toISOString().split('T')[0];
+        }
+
+        if (fStart && rowDateStr < fStart) pass = false;
+        if (fEnd && rowDateStr > fEnd) pass = false;
+        if (fZone && (r['สถานที่/โซน'] || '').indexOf(fZone) === -1 && fZone !== r['สถานที่/โซน']) pass = false;
+        if (fShop && (r['ชื่อร้าน'] || '').toLowerCase().indexOf(fShop) === -1) pass = false;
+        
+        return pass;
+      });
+      renderTable();
+    }
+
+    function renderTable() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('dataTable').style.display = 'table';
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+      
+      filteredData.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        let dObj = new Date(row['เวลาบันทึก']);
+        let dateStr = isNaN(dObj) ? row['วันที่'] : dObj.toLocaleString('th-TH');
+        
+        tr.innerHTML = `
+          <td>${dateStr}</td>
+          <td><b>${row['สถานที่/โซน']}</b><br>${row['ชื่อร้าน'] || '-'}</td>
+          <td>${row['รายการ']}<br><span style="font-size:11px; color:#7f8c8d;">${row['ประเภทการรุกล้ำ'] || ''}</span></td>
+          <td><span style="color:#e74c3c; font-weight:bold;">รอการดำเนินการ</span></td>
+          <td><button class="btn" onclick="openModal(${index})">ดำเนินการ</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      if(filteredData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">🎉 ไม่มีรายการตามเงื่อนไขที่เลือก</td></tr>';
+      }
+    }
+
+    function openModal(index) {
+      targetRow = filteredData[index];
+      const shopName = targetRow['ชื่อร้าน'] || 'ไม่ระบุ';
+      document.getElementById('modalShopName').innerText = `ร้าน: ${shopName} (${targetRow['สถานที่/โซน']})`;
+      
+      // ดึงรูปภาพมาแสดงเพื่อให้แอดมินดู
+      const p1 = targetRow['รูปภาพ1'] || targetRow['รูปภาพ 1'] || targetRow['รูปที่ 1'] || targetRow['รูปภาพ'];
+      const p2 = targetRow['รูปภาพ2'] || targetRow['รูปภาพ 2'] || targetRow['รูปที่ 2'];
+      let photoHtml = '';
+      if(p1) photoHtml += `<a href="${p1}" target="_blank"><img src="${getImgSrc(p1)}" style="width:100px; height:100px; object-fit:cover; border-radius:4px; margin:0 5px; border:1px solid #ddd;"></a>`;
+      if(p2) photoHtml += `<a href="${p2}" target="_blank"><img src="${getImgSrc(p2)}" style="width:100px; height:100px; object-fit:cover; border-radius:4px; margin:0 5px; border:1px solid #ddd;"></a>`;
+      
+      if(photoHtml === '') photoHtml = '<span style="font-size:12px; color:#999;">(ไม่มีรูปภาพแนบจากผู้ตรวจ)</span>';
+      document.getElementById('modalPhotoContainer').innerHTML = photoHtml;
+      
+      // ค้นหาประวัติ
+      const historyDiv = document.getElementById('historyContainer');
+      const hist = allData.filter(r => r['ชื่อร้าน'] === shopName && r['ชื่อร้าน'] && r['ชื่อร้าน'] !== 'ไม่ระบุ' && (r['ผลตรวจ']==='พบการรุกล้ำ' || r['ผลตรวจ']==='ไม่ผ่าน'));
+      
+      // ฟังก์ชันช่วยแปลงวันที่สำหรับจัดเรียง (รองรับ ปี พ.ศ.)
+      function parseDateStr(val) {
+        if (!val) return 0;
+        let d = new Date(val);
+        if (!isNaN(d.getTime())) return d.getTime();
+        if (typeof val === 'string') {
+          const parts = val.split(' ');
+          const dParts = parts[0].split('/');
+          if (dParts.length === 3) {
+             let day = parseInt(dParts[0]);
+             let month = parseInt(dParts[1]) - 1;
+             let year = parseInt(dParts[2]);
+             if (year > 2400) year -= 543;
+             let h = 0, m = 0;
+             if (parts[1]) {
+                const tParts = parts[1].split(':');
+                if (tParts.length >= 2) {
+                   h = parseInt(tParts[0]);
+                   m = parseInt(tParts[1]);
+                }
+             }
+             return new Date(year, month, day, h, m).getTime();
+          }
+        }
+        return 0;
+      }
+
+      // เรียงตามวันที่ล่าสุดขึ้นก่อน (เวลามากสุดขึ้นก่อน)
+      hist.sort((a,b) => {
+        const dA = parseDateStr(a['เวลาบันทึก']) || parseDateStr(a['วันที่']);
+        const dB = parseDateStr(b['เวลาบันทึก']) || parseDateStr(b['วันที่']);
+        return dB - dA;
+      });
+      
+      if(hist.length > 0) {
+        let hHtml = '<div style="background:#fff3cd; padding:8px; border-radius:4px; font-size:12px; margin-bottom:15px; border-left:3px solid #ffc107;">';
+        hHtml += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;"><b>⚠️ ประวัติการรุกล้ำ:</b> <div><span style="font-size:10px;">พิมพ์ตั้งแต่วันที่:</span> <input type="date" id="printStart" style="font-size:10px;padding:1px;border-radius:2px;border:1px solid #ccc;"> - <input type="date" id="printEnd" style="font-size:10px;padding:1px;border-radius:2px;border:1px solid #ccc;"> <button onclick="printHistory()" type="button" style="background:#fff; border:1px solid #ccc; border-radius:3px; padding:2px 6px; cursor:pointer; font-size:11px;">🖨️ พิมพ์</button></div></div>';
+        hHtml += '<div id="historyPrintArea" style="max-height:150px; overflow-y:auto; background:#fff; border:1px solid #ffe69c; padding:0;"><table style="width:100%; border-collapse:collapse; font-size:11px;">';
+        hHtml += '<thead style="background:#fdf5e6; position:sticky; top:0;"><tr><th style="padding:4px 6px;border-bottom:1px solid #ddd;text-align:left;">วันที่</th><th style="padding:4px 6px;border-bottom:1px solid #ddd;text-align:left;">รายการ</th><th style="padding:4px 6px;border-bottom:1px solid #ddd;text-align:left;">สถานะ</th></tr></thead><tbody>';
+        hist.forEach(h => {
+           let t = parseDateStr(h['เวลาบันทึก']) || parseDateStr(h['วันที่']);
+           let hdStr = h['วันที่'];
+           if (t > 0) {
+              const dObj = new Date(t);
+              hdStr = dObj.toLocaleDateString('th-TH', {day: '2-digit', month: '2-digit', year: 'numeric'}) + ' ' + 
+                      dObj.toLocaleTimeString('th-TH', {hour: '2-digit', minute: '2-digit'});
+           }
+           let hdObj = t > 0 ? new Date(t) : new Date(NaN);
+           // Convert ISO date for filtering in print
+           let isoDate = '';
+           if(!isNaN(hdObj)) {
+               const tzDate = new Date(hdObj.getTime() + (7 * 60 * 60 * 1000));
+               isoDate = tzDate.toISOString().split('T')[0];
+           } else if (h['วันที่']) {
+               isoDate = h['วันที่'];
+           }
+           
+           const isCurrent = h['เวลาบันทึก'] === targetRow['เวลาบันทึก'];
+           const bg = isCurrent ? '#ffeb3b' : 'transparent';
+           const indicator = isCurrent ? ' <span style="color:#d35400; font-size:9px;">(รายการปัจจุบัน)</span>' : '';
+           
+           hHtml += `<tr data-date="${isoDate}" style="background:${bg}"><td style="padding:4px 6px;border-bottom:1px solid #eee;">${hdStr}</td><td style="padding:4px 6px;border-bottom:1px solid #eee;">${h['รายการ']}${indicator}</td><td style="padding:4px 6px;border-bottom:1px solid #eee; color:${h['สถานะบทลงโทษ']?'#c0392b':'#7f8c8d'}">${h['สถานะบทลงโทษ'] || 'ยังไม่ดำเนินการ'}</td></tr>`;
+        });
+        hHtml += '</tbody></table></div></div>';
+        historyDiv.innerHTML = hHtml;
+      } else {
+        historyDiv.innerHTML = '<div style="background:#e8f8f5; padding:8px; border-radius:4px; font-size:12px; margin-bottom:15px; border-left:3px solid #1abc9c;">✅ ไม่พบประวัติการทำผิดของร้านนี้เลย (เพิ่งผิดครั้งแรก)</div>';
+      }
+
+      document.getElementById('actionModal').style.display = 'block';
+    }
+
+    function printHistory() {
+      const pStart = document.getElementById('printStart') ? document.getElementById('printStart').value : '';
+      const pEnd = document.getElementById('printEnd') ? document.getElementById('printEnd').value : '';
+      
+      const table = document.querySelector('#historyPrintArea table');
+      const rows = Array.from(table.querySelectorAll('tbody tr'));
+      
+      // Create a filtered clone of the rows
+      let filteredRowsHtml = '';
+      rows.forEach(tr => {
+         const rowDate = tr.getAttribute('data-date');
+         let show = true;
+         if (pStart && rowDate < pStart) show = false;
+         if (pEnd && rowDate > pEnd) show = false;
+         if (show) filteredRowsHtml += tr.outerHTML;
+      });
+      
+      if (!filteredRowsHtml) {
+         alert('ไม่มีข้อมูลประวัติในช่วงวันที่เลือกครับ');
+         return;
+      }
+
+      function formatThaiDate(isoStr) {
+         if (!isoStr) return '';
+         const p = isoStr.split('-');
+         if (p.length !== 3) return isoStr;
+         return `${p[2]}/${p[1]}/${parseInt(p[0]) + 543}`;
+      }
+
+      const shopName = document.getElementById('modalShopName').innerText;
+      const dateRangeText = (pStart || pEnd) ? `<div style="font-size:13px; color:#666; margin-bottom:15px;">ตั้งแต่วันที่: ${formatThaiDate(pStart)||'เริ่มต้น'} ถึง ${formatThaiDate(pEnd)||'ปัจจุบัน'}</div>` : `<div style="font-size:13px; color:#666; margin-bottom:15px;">ประวัติทั้งหมด</div>`;
+      
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write('<html><head><title>พิมพ์ประวัติร้านค้า</title>');
+      printWindow.document.write('<style>body{font-family:sans-serif; padding:20px;} table{width:100%; border-collapse:collapse; font-size:12px;} th,td{border:1px solid #ddd; padding:8px; text-align:left;} th{background:#f5f5f5;} h2{color:#1B5E3B; margin-bottom:5px;} .sub{color:#666; font-size:13px; margin-bottom:5px;}</style>');
+      printWindow.document.write('</head><body>');
+      printWindow.document.write('<h2>ประวัติการกระทำผิด</h2>');
+      printWindow.document.write('<div class="sub"><b>' + shopName + '</b></div>');
+      printWindow.document.write(dateRangeText);
+      printWindow.document.write('<table><thead><tr><th style="width:20%">วันที่</th><th style="width:50%">รายการ</th><th style="width:30%">สถานะ</th></tr></thead><tbody>');
+      printWindow.document.write(filteredRowsHtml);
+      printWindow.document.write('</tbody></table>');
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+
+    function closeModal() {
+      document.getElementById('actionModal').style.display = 'none';
+    }
+
+    function submitAction() {
+      const step = document.getElementById('penaltyStep').value;
+      const note = document.getElementById('actionNote').value;
+      const fileInput = document.getElementById('evidenceFile');
+      
+      const payload = {
+        targetTimestamp: targetRow['เวลาบันทึก'],
+        penaltyStep: step,
+        note: note,
+        photoBase64: ''
+      };
+
+      if (fileInput.files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          payload.photoBase64 = e.target.result;
+          sendPayload(payload);
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        sendPayload(payload);
+      }
+    }
+
+    function sendPayload(payload) {
+      const btn = document.querySelector('.modal-content .btn');
+      const originalText = btn.innerText;
+      btn.innerText = 'กำลังบันทึกข้อมูล...';
+      btn.disabled = true;
+      google.script.run.withSuccessHandler(function(response) {
+        if(response.success) {
+          btn.innerText = '✅ บันทึกเรียบร้อย!';
+          btn.style.backgroundColor = '#27ae60';
+          setTimeout(() => {
+            btn.innerText = originalText;
+            btn.disabled = false;
+            btn.style.backgroundColor = '';
+            closeModal();
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('dataTable').style.display = 'none';
+            allData = [];
+            loadChunk(0);
+          }, 1500);
+        } else {
+          btn.innerText = originalText;
+          btn.disabled = false;
+          showCustomAlert('เกิดข้อผิดพลาด: ' + response.error, true);
+        }
+      }).withFailureHandler(function(err) {
+        btn.innerText = originalText;
+        btn.disabled = false;
+        showCustomAlert('เกิดข้อผิดพลาด: ' + err.message, true);
+      }).updateResolutionData(payload);
+    }
+
+    function showCustomAlert(msg, isError = false) {
+      // Create a simple toast notification
+      const toast = document.createElement('div');
+      toast.style.position = 'fixed';
+      toast.style.bottom = '20px';
+      toast.style.left = '50%';
+      toast.style.transform = 'translateX(-50%)';
+      toast.style.backgroundColor = isError ? '#e74c3c' : '#2ecc71';
+      toast.style.color = 'white';
+      toast.style.padding = '12px 24px';
+      toast.style.borderRadius = '4px';
+      toast.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+      toast.style.zIndex = '9999';
+      toast.innerText = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s';
+        setTimeout(() => toast.remove(), 500);
+      }, 3000);
+    }
+
+    function getImgSrc(url) {
+      if (!url) return '';
+      const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
+      if (m1) return 'https://lh3.googleusercontent.com/d/' + m1[1];
+      const m2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+      if (m2) return 'https://lh3.googleusercontent.com/d/' + m2[1];
+      const m3 = url.match(/drive\.google\.com\/uc\?id=([^&]+)/);
+      if (m3) return 'https://lh3.googleusercontent.com/d/' + m3[1];
+      return url;
+    }
+  </script>
+</body>
+</html>

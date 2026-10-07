@@ -588,6 +588,12 @@ function render() {
         <div class="chart-wrap"><canvas id="chartEncType"></canvas></div>
       </div>
     </div>
+    <div class="chart-row" id="penaltyRow" style="display:none;">
+      <div class="card" style="flex:1;">
+        <div class="card-head">สถิติระดับบทลงโทษ (เฉพาะรายการที่มีปัญหา) <span class="click-hint">— คลิกแท่งเพื่อดูรายละเอียด</span></div>
+        <div class="chart-wrap"><canvas id="chartPenalty"></canvas></div>
+      </div>
+    </div>
     <div class="chart-row">
       <div class="card">
         <div class="card-head">ปัญหาแต่ละโซน <span class="click-hint">— คลิกแท่งเพื่อดูรายละเอียด</span></div>
@@ -633,6 +639,7 @@ function render() {
 
   renderZoneChart(badRows, rows);
   renderEncTypeChart(badRows);
+  renderPenaltyChart(badRows);
   renderTrendChart();
   renderHeatmap(rows);
   renderRoundCompletion(rows);
@@ -691,6 +698,57 @@ function renderEncTypeChart(badRows) {
         const typeName = sorted[idx][0];
         const detailRows = encRows.filter(r => (r[C.encType]||'ไม่ระบุ') === typeName);
         openModal(`ประเภทการรุกล้ำ: ${typeName}`, `พบ ${detailRows.length} รายการ`, detailRows);
+      }
+    }
+  });
+}
+
+function renderPenaltyChart(badRows) {
+  const rowEl = document.getElementById('penaltyRow');
+  if (!badRows || badRows.length === 0) {
+    if(rowEl) rowEl.style.display = 'none';
+    return;
+  }
+  
+  const cnt = { 'ยังไม่ดำเนินการ': 0 };
+  badRows.forEach(r => {
+    const p = r['สถานะบทลงโทษ'] || 'ยังไม่ดำเนินการ';
+    cnt[p] = (cnt[p] || 0) + 1;
+  });
+  const sorted = Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
+
+  if(rowEl) rowEl.style.display = 'flex';
+
+  const ctx = document.getElementById('chartPenalty').getContext('2d');
+  charts.penalty = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(x=>x[0]),
+      datasets: [{
+        data: sorted.map(x=>x[1]),
+        backgroundColor: sorted.map(x => x[0]==='ยังไม่ดำเนินการ' ? 'rgba(231, 76, 60, 0.7)' : 'rgba(243, 156, 18, 0.7)'),
+        borderColor: sorted.map(x => x[0]==='ยังไม่ดำเนินการ' ? '#c0392b' : '#f39c12'),
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 30 } },
+      plugins: {
+        legend: { display: false },
+        datalabels: { color: '#333', anchor: 'end', align: 'top', offset: 2, font: { weight: 'bold', size: 12 }, formatter: v => v + ' รายการ' }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { grace: '15%', grid: { display: false }, border: { display: false }, ticks: { display: false } }
+      },
+      onClick: (e, els) => {
+        if (!els.length) return;
+        const idx = els[0].index;
+        const typeName = sorted[idx][0];
+        const detailRows = badRows.filter(r => (r['สถานะบทลงโทษ']||'ยังไม่ดำเนินการ') === typeName);
+        openModal(`บทลงโทษ: ${typeName}`, `พบ ${detailRows.length} รายการ`, detailRows);
       }
     }
   });
