@@ -43,6 +43,13 @@
           <option value="โซนเทคโฮม">โซนเทคโฮม</option>
         </select>
       </div>
+      <div><label style="font-size:12px;font-weight:bold;">สถานะ:</label> 
+        <select id="filterStatus" onchange="applyFilter()" style="padding:4px; border:1px solid #ccc; border-radius:3px;">
+          <option value="pending">รอการดำเนินการ</option>
+          <option value="completed">ดำเนินการแล้ว</option>
+          <option value="all">ทั้งหมด</option>
+        </select>
+      </div>
       <div><label style="font-size:12px;font-weight:bold;">ชื่อร้าน:</label> <input type="text" id="filterShop" onkeyup="applyFilter()" placeholder="พิมพ์ค้นหาชื่อร้าน..." style="padding:4px; border:1px solid #ccc; border-radius:3px; width:150px;"></div>
     </div>
     <div id="loading">กำลังโหลดข้อมูล...</div>
@@ -136,8 +143,6 @@
            document.getElementById('loading').innerHTML = `กำลังโหลดข้อมูลย้อนหลัง (${percent}%)...`;
            loadChunk(offset + 1000);
         } else {
-           // กรองเฉพาะรายการที่ยังไม่ลงโทษเพื่อแสดงในตารางหลัก
-           pendingData = allData.filter(r => !r['สถานะบทลงโทษ'] || r['สถานะบทลงโทษ'] === '');
            applyFilter();
         }
       } catch (e) {
@@ -150,8 +155,16 @@
       const fEnd = document.getElementById('filterEnd').value;
       const fZone = document.getElementById('filterZone').value;
       const fShop = document.getElementById('filterShop').value.toLowerCase();
+      const fStatus = document.getElementById('filterStatus') ? document.getElementById('filterStatus').value : 'pending';
 
-      filteredData = pendingData.filter(r => {
+      let sourceData = allData;
+      if (fStatus === 'pending') {
+         sourceData = allData.filter(r => !r['สถานะบทลงโทษ'] || String(r['สถานะบทลงโทษ']).trim() === '');
+      } else if (fStatus === 'completed') {
+         sourceData = allData.filter(r => r['สถานะบทลงโทษ'] && String(r['สถานะบทลงโทษ']).trim() !== '');
+      }
+
+      filteredData = sourceData.filter(r => {
         let pass = true;
         let rowDateStr = r['วันที่'] || '';
         let dObj = new Date(r['เวลาบันทึก']);
@@ -181,12 +194,16 @@
         let dObj = new Date(row['เวลาบันทึก']);
         let dateStr = isNaN(dObj) ? row['วันที่'] : dObj.toLocaleString('th-TH');
         
+        const statusText = (row['สถานะบทลงโทษ'] && String(row['สถานะบทลงโทษ']).trim() !== '') ? `<span style="color:#27ae60; font-weight:bold;">${row['สถานะบทลงโทษ']}</span>` : `<span style="color:#e74c3c; font-weight:bold;">รอการดำเนินการ</span>`;
+        const btnText = (row['สถานะบทลงโทษ'] && String(row['สถานะบทลงโทษ']).trim() !== '') ? 'ดูประวัติ / แก้ไข' : 'ดำเนินการ';
+        const btnStyle = (row['สถานะบทลงโทษ'] && String(row['สถานะบทลงโทษ']).trim() !== '') ? 'background:#f39c12;' : '';
+
         tr.innerHTML = `
           <td>${dateStr}</td>
           <td><b>${row['สถานที่/โซน']}</b><br>${row['ชื่อร้าน'] || '-'}</td>
           <td>${row['รายการ']}<br><span style="font-size:11px; color:#7f8c8d;">${row['ประเภทการรุกล้ำ'] || ''}</span></td>
-          <td><span style="color:#e74c3c; font-weight:bold;">รอการดำเนินการ</span></td>
-          <td><button class="btn" onclick="openModal(${index})">ดำเนินการ</button></td>
+          <td>${statusText}</td>
+          <td><button class="btn" onclick="openModal(${index})" style="${btnStyle}">${btnText}</button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -200,6 +217,16 @@
       targetRow = filteredData[index];
       const shopName = targetRow['ชื่อร้าน'] || 'ไม่ระบุ';
       document.getElementById('modalShopName').innerText = `ร้าน: ${shopName} (${targetRow['สถานที่/โซน']})`;
+      
+      // Clear inputs or pre-fill existing values
+      const existingPenalty = targetRow['สถานะบทลงโทษ'] || '';
+      if(existingPenalty) {
+        document.getElementById('penaltyStep').value = existingPenalty;
+      } else {
+        document.getElementById('penaltyStep').selectedIndex = 0;
+      }
+      document.getElementById('actionNote').value = targetRow['รายละเอียด'] || '';
+      document.getElementById('evidenceFile').value = '';
       
       // ดึงรูปภาพมาแสดงเพื่อให้แอดมินดู
       const p1 = targetRow['รูปภาพ1'] || targetRow['รูปภาพ 1'] || targetRow['รูปที่ 1'] || targetRow['รูปภาพ'];
@@ -339,6 +366,9 @@
 
     function closeModal() {
       document.getElementById('actionModal').style.display = 'none';
+      document.getElementById('penaltyStep').selectedIndex = 0;
+      document.getElementById('actionNote').value = '';
+      document.getElementById('evidenceFile').value = '';
     }
 
     function submitAction() {
@@ -379,11 +409,13 @@
             btn.disabled = false;
             btn.style.backgroundColor = '';
             closeModal();
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('dataTable').style.display = 'none';
-            allData = [];
-            loadChunk(0);
-          }, 1500);
+            // อัปเดตข้อมูลแบบ Optimistic (ไม่ต้องโหลดใหม่)
+            if (targetRow) {
+               targetRow['สถานะบทลงโทษ'] = payload.penaltyStep;
+               targetRow['รายละเอียด'] = payload.note;
+            }
+            applyFilter();
+          }, 1000);
         } else {
           btn.innerText = originalText;
           btn.disabled = false;
