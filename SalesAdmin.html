@@ -51,6 +51,7 @@
         </select>
       </div>
       <div><label style="font-size:12px;font-weight:bold;">ชื่อร้าน:</label> <input type="text" id="filterShop" onkeyup="applyFilter()" placeholder="พิมพ์ค้นหาชื่อร้าน..." style="padding:4px; border:1px solid #ccc; border-radius:3px; width:150px;"></div>
+      <button class="btn" style="margin-left:auto; background:#34495e;" onclick="printTable()">🖨️ พิมพ์รายการ (PDF)</button>
     </div>
     <div id="loading">กำลังโหลดข้อมูล...</div>
     <div style="overflow-x:auto;">
@@ -355,6 +356,55 @@
       printWindow.document.write(dateRangeText);
       printWindow.document.write('<table><thead><tr><th style="width:20%">วันที่</th><th style="width:50%">รายการ</th><th style="width:30%">สถานะ</th></tr></thead><tbody>');
       printWindow.document.write(filteredRowsHtml);
+      printWindow.document.write('</tbody></table>');
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+
+    function printTable() {
+      if(filteredData.length === 0) {
+        alert('ไม่มีข้อมูลให้พิมพ์ครับ');
+        return;
+      }
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write('<html><head><title>พิมพ์รายการร้านค้า</title>');
+      printWindow.document.write('<style>body{font-family:sans-serif; padding:20px;} table{width:100%; border-collapse:collapse; font-size:12px;} th,td{border:1px solid #ddd; padding:8px; text-align:left; vertical-align:top;} th{background:#f5f5f5;} h2{color:#1B5E3B; margin-bottom:5px;} .sub{color:#666; font-size:13px; margin-bottom:15px;}</style>');
+      printWindow.document.write('</head><body>');
+      printWindow.document.write('<h2>รายการตรวจสอบการรุกล้ำพื้นที่</h2>');
+      
+      const fStart = document.getElementById('filterStart').value;
+      const fEnd = document.getElementById('filterEnd').value;
+      const fStatus = document.getElementById('filterStatus') ? document.getElementById('filterStatus').options[document.getElementById('filterStatus').selectedIndex].text : 'ทั้งหมด';
+      
+      function formatThaiDate(isoStr) {
+         if (!isoStr) return '';
+         const p = isoStr.split('-');
+         if (p.length !== 3) return isoStr;
+         return `${p[2]}/${p[1]}/${parseInt(p[0]) + 543}`;
+      }
+
+      let dateText = 'ช่วงเวลา: ทั้งหมด';
+      if(fStart || fEnd) {
+         dateText = `ช่วงเวลา: ${formatThaiDate(fStart)||'เริ่มต้น'} ถึง ${formatThaiDate(fEnd)||'ปัจจุบัน'}`;
+      }
+      printWindow.document.write(`<div class="sub">${dateText} | สถานะ: <b>${fStatus}</b> | รวม ${filteredData.length} รายการ</div>`);
+      
+      printWindow.document.write('<table><thead><tr><th style="width:15%">วันที่</th><th style="width:25%">โซน/ร้านค้า</th><th style="width:30%">รายการรุกล้ำ</th><th style="width:30%">สถานะ/บทลงโทษ</th></tr></thead><tbody>');
+      
+      filteredData.forEach(row => {
+        let dObj = new Date(row['เวลาบันทึก']);
+        let dateStr = isNaN(dObj) ? row['วันที่'] : dObj.toLocaleDateString('th-TH', {day: '2-digit', month: '2-digit', year: 'numeric'}) + ' ' + dObj.toLocaleTimeString('th-TH', {hour: '2-digit', minute: '2-digit'});
+        let shopStr = `<b>${row['สถานที่/โซน']}</b><br>${row['ชื่อร้าน'] || '-'}`;
+        let itemStr = `${row['รายการ']}<br><span style="color:#777; font-size:11px;">${row['ประเภทการรุกล้ำ']||''}</span>`;
+        let statusStr = row['สถานะบทลงโทษ'] ? `<span style="color:#27ae60;">${row['สถานะบทลงโทษ']}</span>` : '<span style="color:#e74c3c;">รอการดำเนินการ</span>';
+        if (row['รายละเอียด']) statusStr += `<br><span style="color:#666; font-size:11px;">หมายเหตุ: ${row['รายละเอียด']}</span>`;
+        printWindow.document.write(`<tr><td>${dateStr}</td><td>${shopStr}</td><td>${itemStr}</td><td>${statusStr}</td></tr>`);
+      });
+      
       printWindow.document.write('</tbody></table>');
       printWindow.document.write('</body></html>');
       printWindow.document.close();
