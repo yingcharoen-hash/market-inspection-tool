@@ -742,7 +742,7 @@ function renderPenaltyChart(badRows) {
           color: '#333', anchor: 'end', align: 'top', offset: 2, 
           font: { weight: 'bold', size: 12 }, 
           formatter: v => {
-            const pct = ((v / badRows.length) * 100).toFixed(0);
+            const pct = ((v / badRows.length) * 100).toFixed(1);
             return v + ' รายการ (' + pct + '%)';
           }
         }
