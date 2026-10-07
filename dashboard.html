@@ -729,7 +729,8 @@ function renderPenaltyChart(badRows) {
         backgroundColor: sorted.map(x => x[0]==='ยังไม่ดำเนินการ' ? 'rgba(231, 76, 60, 0.7)' : 'rgba(243, 156, 18, 0.7)'),
         borderColor: sorted.map(x => x[0]==='ยังไม่ดำเนินการ' ? '#c0392b' : '#f39c12'),
         borderWidth: 1,
-        borderRadius: 4
+        borderRadius: 4,
+        minBarLength: 10
       }]
     },
     options: {
@@ -741,7 +742,7 @@ function renderPenaltyChart(badRows) {
           color: '#333', anchor: 'end', align: 'top', offset: 2, 
           font: { weight: 'bold', size: 12 }, 
           formatter: v => {
-            const pct = ((v / badRows.length) * 100).toFixed(1);
+            const pct = ((v / badRows.length) * 100).toFixed(0);
             return v + ' รายการ (' + pct + '%)';
           }
         }
