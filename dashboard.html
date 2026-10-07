@@ -737,7 +737,14 @@ function renderPenaltyChart(badRows) {
       layout: { padding: { top: 30 } },
       plugins: {
         legend: { display: false },
-        datalabels: { color: '#333', anchor: 'end', align: 'top', offset: 2, font: { weight: 'bold', size: 12 }, formatter: v => v + ' รายการ' }
+        datalabels: { 
+          color: '#333', anchor: 'end', align: 'top', offset: 2, 
+          font: { weight: 'bold', size: 12 }, 
+          formatter: v => {
+            const pct = ((v / badRows.length) * 100).toFixed(1);
+            return v + ' รายการ (' + pct + '%)';
+          }
+        }
       },
       scales: {
         x: { grid: { display: false }, ticks: { font: { size: 11 } } },
