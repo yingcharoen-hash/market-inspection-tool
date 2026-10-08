@@ -91,8 +91,6 @@
       <div id="loginError" style="display:none; color: #d63031; font-size: 13px; background: #ffeaa7; padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; text-align: left; line-height: 1.4;"></div>
       
       <button id="loginBtn" class="btn" style="width: 100%; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 6px; background: #1B5E3B;" onclick="submitLogin()">เข้าสู่ระบบ</button>
-      
-      <p style="color: #95a5a6; font-size: 11px; margin-top: 18px; margin-bottom: 0;">หากไม่สามารถเข้าใช้งานได้ โปรดติดต่อผู้ดูแลระบบเพื่อเพิ่มสิทธิ์ในแท็บ Admin_Users</p>
     </div>
   </div>
 
@@ -219,7 +217,7 @@
             initApp();
           } else {
             localStorage.removeItem('yc_admin_email');
-            showLoginModal('อีเมล "' + email + '" ไม่มีสิทธิ์เข้าถึงหน้านี้ โปรดแจ้งผู้ดูแลระบบให้เพิ่มสิทธิ์ในชีท');
+            showLoginModal('อีเมล "' + email + '" ไม่มีสิทธิ์เข้าถึงหน้านี้ โปรดแจ้งผู้ดูแลระบบ');
           }
         })
         .withFailureHandler(function(err) {
