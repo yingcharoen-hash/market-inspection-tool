@@ -206,7 +206,7 @@ const KNOWN_ZONES  = [
   "พลาซ่า + ฟู้ดพลาซ่า + อาคารจงรักษ์",
   "โซนอาคารผัก 2",
   "โซนอาคาร 60 ปี",
-  "โซนเทคโฮม"
+  "โซนเทคโฮม (Take Home)"
 ];
 const KNOWN_ROUNDS = ["00:00","03:00","06:00","08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00"];
 
@@ -431,13 +431,39 @@ function closeModal(e) { if (e.target===document.getElementById('modalOverlay'))
 function closeModalDirect() { document.getElementById('modalOverlay').classList.remove('open'); document.body.style.overflow=''; }
 document.addEventListener('keydown', e => { if (e.key==='Escape') closeModalDirect(); });
 
+// ── รวมชื่อโซนที่สะกดต่างกันให้เป็นชื่อมาตรฐานเดียวกัน ────────
+function normalizeZone(raw) {
+  if (!raw) return '';
+  let z = String(raw).trim().replace(/\s+/g, ' ');
+
+  if (z === 'โซนอาคารกลาง' || z === 'อาคารกลาง') return 'อาคารกลาง';
+  if (/อาคาร\s*60\s*ปี/i.test(z)) return 'โซนอาคาร 60 ปี';
+  if (/อาคารผัก\s*2/i.test(z)) return 'โซนอาคารผัก 2';
+  if (/800/i.test(z)) return 'อาคาร 800';
+  if (/take\s*home|เทคโฮม/i.test(z)) return 'โซนเทคโฮม (Take Home)';
+  if (/ครัวยิ่งเจริญ/i.test(z)) return 'ครัวยิ่งเจริญ';
+  if ((/ฟู๊ดพลาซ่า|ฟู้ดพลาซ่า/i.test(z)) && !z.includes('+')) return 'ฟู้ดพลาซ่ายิ่งเจริญ';
+  if (/จงรัก/i.test(z) && !z.includes('+')) return 'อาคารจงรักภักดี';
+  if (z === 'โซนอาคารยาว' || z === 'ริมอาคารยาว') return 'ริมอาคารยาว';
+  if (z === 'โซนพลาซ่า2' || z === 'อาคารยิ่งเจริญพลาซ่า 2') return 'อาคารยิ่งเจริญพลาซ่า 2';
+  if ((z === 'โซนพลาซ่า' || z === 'อาคารยิ่งเจริญพลาซ่า') && !z.includes('+')) return 'อาคารยิ่งเจริญพลาซ่า';
+  if (/สโตร์ปลา|ปลาทะเล\/สโตร์/i.test(z)) return 'สโตร์ปลาน้ำจืดและปลาทะเล';
+  if (/เรือนไทย/i.test(z)) return 'ซุ้มเรือนไทย';
+
+  return z;
+}
+
 // ── Load ──────────────────────────────────────
 async function loadData() {
   document.getElementById('main').innerHTML = '<div class="msg">กำลังโหลดข้อมูล...</div>';
   try {
     const res  = await fetch(SCRIPT_URL + '?action=data');
     const json = await res.json();
-    allData = (json.rows||[]).filter(r=>r&&r[C.date]).map(r=>({...r, _d:toThaiDate(r[C.date])}));
+    allData = (json.rows||[]).filter(r=>r&&r[C.date]).map(r=>({
+      ...r,
+      _d: toThaiDate(r[C.date]),
+      [C.location]: normalizeZone(r[C.location])
+    }));
 
     const today = todayThai();
     document.getElementById('dateStart').value = today;
