@@ -27,10 +27,16 @@
 </head>
 <body>
   <div class="container">
-    <h2>📋 ตารางจัดการบทลงโทษร้านค้า</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #EBF5EE; padding-bottom: 10px; margin-bottom: 15px; flex-wrap:wrap; gap:10px;">
+      <h2 style="margin:0; border:none; padding:0;">📋 ตารางจัดการบทลงโทษร้านค้า</h2>
+      <div id="userBadge" style="display:none; align-items:center; gap:8px; font-size:13px; background:#e8f5e9; padding:6px 14px; border-radius:20px; border:1px solid #c8e6c9;">
+        <span style="color:#2e7d32; font-weight:500;">👤 <strong id="loggedUserEmail"></strong></span>
+        <button onclick="logoutAdmin()" style="background:none; border:none; color:#c62828; cursor:pointer; font-size:12px; text-decoration:underline; padding:0 4px; font-weight:bold;" title="สลับบัญชี / ออกจากระบบ">ออกจากระบบ</button>
+      </div>
+    </div>
     <div style="display:flex; gap:15px; margin-bottom:15px; background:#f5f6fa; padding:10px; border-radius:4px; flex-wrap:wrap; align-items:center;">
-      <div><label style="font-size:12px;font-weight:bold;">เริ่มวันที่:</label> <input type="date" id="filterStart" onchange="applyFilter()" style="padding:4px; border:1px solid #ccc; border-radius:3px;"></div>
-      <div><label style="font-size:12px;font-weight:bold;">ถึงวันที่:</label> <input type="date" id="filterEnd" onchange="applyFilter()" style="padding:4px; border:1px solid #ccc; border-radius:3px;"></div>
+      <div><label style="font-size:12px;font-weight:bold;">เริ่มวันที่:</label> <input type="date" id="filterStart" onchange="onDateChange()" style="padding:4px; border:1px solid #ccc; border-radius:3px;"></div>
+      <div><label style="font-size:12px;font-weight:bold;">ถึงวันที่:</label> <input type="date" id="filterEnd" onchange="onDateChange()" style="padding:4px; border:1px solid #ccc; border-radius:3px;"></div>
       <div><label style="font-size:12px;font-weight:bold;">โซน:</label> 
         <select id="filterZone" onchange="applyFilter()" style="padding:4px; border:1px solid #ccc; border-radius:3px;">
           <option value="">ทั้งหมด</option>
@@ -53,7 +59,7 @@
       <div><label style="font-size:12px;font-weight:bold;">ชื่อร้าน:</label> <input type="text" id="filterShop" onkeyup="applyFilter()" placeholder="พิมพ์ค้นหาชื่อร้าน..." style="padding:4px; border:1px solid #ccc; border-radius:3px; width:150px;"></div>
       <button class="btn" style="margin-left:auto; background:#34495e;" onclick="printTable()">🖨️ พิมพ์รายการ (PDF)</button>
     </div>
-    <div id="loading">กำลังโหลดข้อมูล...</div>
+    <div id="loading" style="font-size: 18px; color: #1B5E3B; font-weight: bold;">กำลังโหลด (V81)...</div>
     <div style="overflow-x:auto;">
       <table id="dataTable" style="display:none;">
         <thead>
@@ -67,6 +73,26 @@
         </thead>
         <tbody id="tableBody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal" style="display:none; background-color: rgba(0,0,0,0.65); backdrop-filter: blur(4px);">
+    <div class="modal-content" style="max-width: 420px; margin: 10% auto; text-align: center; padding: 30px 25px; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.25);">
+      <div style="font-size: 42px; margin-bottom: 12px;">🔐</div>
+      <h3 style="margin-top:0; color:#1B5E3B; margin-bottom: 8px; font-size: 20px;">ยืนยันสิทธิ์เข้าใช้งานฝ่ายขาย</h3>
+      <p style="color: #636e72; font-size: 13px; margin-bottom: 20px; line-height: 1.5;">ระบบจำกัดสิทธิ์เฉพาะ Gmail ของฝ่ายขายที่กำหนดไว้ในฐานข้อมูล</p>
+      
+      <div style="text-align: left; margin-bottom: 16px;">
+        <label style="font-size: 13px; font-weight: bold; color: #2d3436; display: block; margin-bottom: 6px;">อีเมลผู้ใช้งาน (Gmail บริษัท):</label>
+        <input type="email" id="loginEmailInput" placeholder="เช่น swp.mng.ar2@gmail.com" style="width: 100%; padding: 11px 14px; border: 1.5px solid #dcdde1; border-radius: 6px; font-size: 14px; box-sizing: border-box;" onkeypress="if(event.key==='Enter') submitLogin()">
+      </div>
+      
+      <div id="loginError" style="display:none; color: #d63031; font-size: 13px; background: #ffeaa7; padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; text-align: left; line-height: 1.4;"></div>
+      
+      <button id="loginBtn" class="btn" style="width: 100%; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 6px; background: #1B5E3B;" onclick="submitLogin()">เข้าสู่ระบบ</button>
+      
+      <p style="color: #95a5a6; font-size: 11px; margin-top: 18px; margin-bottom: 0;">หากไม่สามารถเข้าใช้งานได้ โปรดติดต่อผู้ดูแลระบบเพื่อเพิ่มสิทธิ์ในแท็บ Admin_Users</p>
     </div>
   </div>
 
@@ -108,47 +134,215 @@
     </div>
   </div>
 
-  <script>
+                <script>
+      
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+      var el = document.getElementById('loading');
+      if (el) el.innerHTML = '<div style="color:red; font-size: 16px;"><b>CRITICAL ERROR:</b> ' + msg + ' (Line: ' + lineNo + ')</div>';
+      return false;
+    };
+    
     let allData = [];
     let pendingData = [];
     let filteredData = [];
     let targetRow = null;
+    let currentAdminEmail = '';
+    const serverEmail = "<?= serverEmail ?>";
     
-    window.onload = function() {
-      loadChunk(0);
-    };
-
-    function loadChunk(offset) {
-      if (offset === 0) document.getElementById('loading').innerHTML = 'กำลังโหลดข้อมูล (0%)...';
-      google.script.run
-        .withSuccessHandler(function(data) {
-           storeChunk(data, offset);
-        })
-        .withFailureHandler(function(err) {
-           document.getElementById('loading').innerHTML = '<div style="color:red; text-align:center;">เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message + '<br>โปรดรีเฟรชหน้าเว็บ หรือแจ้งผู้ดูแลระบบ</div>';
-        })
-        .getPendingActions(offset, 1000);
+    function checkAuthAndInit() {
+      const savedEmail = (serverEmail || localStorage.getItem('yc_admin_email') || '').trim().toLowerCase();
+      if (savedEmail) {
+        verifyEmail(savedEmail, false);
+      } else {
+        showLoginModal();
+      }
     }
 
-    function storeChunk(data, offset) {
-      try {
-        let res = typeof data === 'string' ? JSON.parse(data) : data;
-        if (res.error) {
-           document.getElementById('loading').innerHTML = '<div style="color:red; text-align:center;">เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: ' + res.error + '</div>';
-           return;
-        }
-        allData = allData.concat(res.rows || []);
-        
-        if (res.hasMore) {
-           let percent = Math.round((allData.length / res.total) * 100);
-           document.getElementById('loading').innerHTML = `กำลังโหลดข้อมูลย้อนหลัง (${percent}%)...`;
-           loadChunk(offset + 1000);
+    function showLoginModal(errMsg) {
+      document.getElementById('dataTable').style.display = 'none';
+      const loading = document.getElementById('loading');
+      if (loading) loading.style.display = 'none';
+      const modal = document.getElementById('loginModal');
+      if (modal) modal.style.display = 'block';
+      const errBox = document.getElementById('loginError');
+      if (errBox) {
+        if (errMsg) {
+          errBox.innerText = errMsg;
+          errBox.style.display = 'block';
         } else {
-           applyFilter();
+          errBox.style.display = 'none';
         }
-      } catch (e) {
-        document.getElementById('loading').innerHTML = '<div style="color:red; text-align:center;">เกิดข้อผิดพลาดในการแปลงข้อมูล: ' + e.message + '<br>' + (typeof data === 'string' ? data.substring(0, 100) : '') + '</div>';
       }
+      const input = document.getElementById('loginEmailInput');
+      if (input) {
+        if (!input.value && localStorage.getItem('yc_admin_email')) {
+          input.value = localStorage.getItem('yc_admin_email');
+        }
+        setTimeout(() => input.focus(), 100);
+      }
+    }
+
+    function submitLogin() {
+      const emailInput = document.getElementById('loginEmailInput');
+      const email = (emailInput ? emailInput.value : '').trim().toLowerCase();
+      if (!email) {
+        showLoginModal('กรุณากรอกอีเมล Gmail ของท่าน');
+        return;
+      }
+      const btn = document.getElementById('loginBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'กำลังตรวจสอบสิทธิ์...';
+      }
+      verifyEmail(email, true);
+    }
+
+    function verifyEmail(email, isManualLogin) {
+      const el = document.getElementById('loading');
+      if (!isManualLogin && el) {
+        el.style.display = 'block';
+        el.innerText = 'กำลังตรวจสอบสิทธิ์ผู้ใช้ (' + email + ')...';
+      }
+      
+      google.script.run
+        .withSuccessHandler(function(res) {
+          const btn = document.getElementById('loginBtn');
+          if (btn) {
+            btn.disabled = false;
+            btn.innerText = 'เข้าสู่ระบบ';
+          }
+          if (res && res.allowed) {
+            currentAdminEmail = email;
+            localStorage.setItem('yc_admin_email', email);
+            document.getElementById('loginModal').style.display = 'none';
+            setLoggedInUser(email);
+            initApp();
+          } else {
+            localStorage.removeItem('yc_admin_email');
+            showLoginModal('อีเมล "' + email + '" ไม่มีสิทธิ์เข้าถึงหน้านี้ โปรดแจ้งผู้ดูแลระบบให้เพิ่มสิทธิ์ในชีท');
+          }
+        })
+        .withFailureHandler(function(err) {
+          const btn = document.getElementById('loginBtn');
+          if (btn) {
+            btn.disabled = false;
+            btn.innerText = 'เข้าสู่ระบบ';
+          }
+          showLoginModal('เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์: ' + err.message);
+        })
+        .checkAdminUser(email);
+    }
+
+    function setLoggedInUser(email) {
+      const badge = document.getElementById('userBadge');
+      const txt = document.getElementById('loggedUserEmail');
+      if (badge && txt) {
+        txt.innerText = email;
+        badge.style.display = 'inline-flex';
+      }
+    }
+
+    function logoutAdmin() {
+      if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
+        localStorage.removeItem('yc_admin_email');
+        location.reload();
+      }
+    }
+
+    function initApp() {
+      const el = document.getElementById('loading');
+      if (el) {
+        el.style.display = 'block';
+        el.innerHTML = 'กำลังโหลดข้อมูลจากฐานข้อมูล (กำลังเชื่อมต่อ Google Apps Script)...';
+      }
+      
+      if (typeof google === 'undefined' || typeof google.script === 'undefined' || typeof google.script.run === 'undefined') {
+        if (el) el.innerHTML = '<div style="color:red; font-size:16px;"><b>CRITICAL ERROR:</b> google.script.run is undefined.</div>';
+        return;
+      }
+      
+      google.script.run.withSuccessHandler(function(responseStr) {
+        try {
+          const dataObj = JSON.parse(responseStr);
+          if (dataObj.error) {
+            if (el) el.innerHTML = '<div style="color:red;">เซิร์ฟเวอร์แจ้งข้อผิดพลาด: ' + dataObj.error + '</div>';
+            return;
+          }
+          allData = dataObj.rows || [];
+          defaultData = allData;
+          oldestLoaded = computeOldest(defaultData);
+          applyFilter();
+        } catch(e) {
+          console.error('Parse Error', e);
+          if (el) el.innerHTML = '<div style="color:red;">เกิดข้อผิดพลาดในการอ่านข้อมูล: ' + e.message + '</div>';
+        }
+      }).withFailureHandler(function(err) {
+        console.error('Load Error', err);
+        if (el) el.innerHTML = '<div style="color:red;">เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message + '</div>';
+      }).getPendingData();
+    }
+    
+    /* ตรวจสอบสิทธิ์ก่อนเริ่มโหลดข้อมูล */
+    checkAuthAndInit();
+
+    let defaultData = [];
+    let oldestLoaded = '';
+    let rangeReqId = 0;
+
+    function toBkkDateStr(v) {
+      const d = new Date(v);
+      if (isNaN(d)) return '';
+      return new Date(d.getTime() + 7 * 3600 * 1000).toISOString().split('T')[0];
+    }
+
+    function computeOldest(rows) {
+      let min = '';
+      rows.forEach(function(r) {
+        const s = toBkkDateStr(r['เวลาบันทึก']);
+        if (s && (!min || s < min)) min = s;
+      });
+      return min;
+    }
+
+    /* เมื่อเลือกวันที่: ถ้าย้อนกลับเกินข้อมูลที่โหลดไว้ ให้ดึงจากเซิร์ฟเวอร์ตามช่วงวันที่ */
+    function onDateChange() {
+      const fStart = document.getElementById('filterStart').value;
+      const fEnd = document.getElementById('filterEnd').value;
+      const needServer = (fStart && oldestLoaded && fStart < oldestLoaded) ||
+                         (!fStart && fEnd && oldestLoaded && fEnd < oldestLoaded);
+      if (!needServer) {
+        allData = defaultData;
+        applyFilter();
+        return;
+      }
+      const myId = ++rangeReqId;
+      const el = document.getElementById('loading');
+      document.getElementById('dataTable').style.display = 'none';
+      el.style.display = 'block';
+      el.innerHTML = 'กำลังดึงข้อมูลย้อนหลังจากฐานข้อมูล... (อาจใช้เวลา 10-20 วินาที)';
+      google.script.run.withSuccessHandler(function(resStr) {
+        if (myId !== rangeReqId) return;
+        try {
+          const res = JSON.parse(resStr);
+          if (res.error) {
+            el.innerHTML = '<div style="color:red;">เซิร์ฟเวอร์แจ้งข้อผิดพลาด: ' + res.error + '</div>';
+            return;
+          }
+          const h = res.headers || [];
+          allData = (res.data || []).map(function(arr) {
+            const o = {};
+            for (let i = 0; i < h.length; i++) o[h[i]] = arr[i];
+            return o;
+          });
+          applyFilter();
+          if (res.truncated) showCustomAlert('ข้อมูลเยอะเกินไป แสดงเฉพาะ 10,000 รายการล่าสุด กรุณาเลือกช่วงวันที่ให้แคบลง', true);
+        } catch (e) {
+          el.innerHTML = '<div style="color:red;">อ่านข้อมูลไม่ได้: ' + e.message + '</div>';
+        }
+      }).withFailureHandler(function(err) {
+        if (myId !== rangeReqId) return;
+        el.innerHTML = '<div style="color:red;">เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message + '</div>';
+      }).getPendingDataByRange(fStart, fEnd);
     }
 
     function applyFilter() {
@@ -430,6 +624,7 @@
         targetTimestamp: targetRow['เวลาบันทึก'],
         penaltyStep: step,
         note: note,
+        operatorEmail: currentAdminEmail || localStorage.getItem('yc_admin_email') || 'ฝ่ายขาย',
         photoBase64: ''
       };
 
@@ -500,16 +695,43 @@
       }, 3000);
     }
 
+    /* NOTE: avoid regex literals and double-slash inside strings here.
+       Apps Script HtmlService may strip text after them as a comment. */
     function getImgSrc(url) {
       if (!url) return '';
-      const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
-      if (m1) return 'https://lh3.googleusercontent.com/d/' + m1[1];
-      const m2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
-      if (m2) return 'https://lh3.googleusercontent.com/d/' + m2[1];
-      const m3 = url.match(/drive\.google\.com\/uc\?id=([^&]+)/);
-      if (m3) return 'https://lh3.googleusercontent.com/d/' + m3[1];
-      return url;
+      url = String(url);
+      var SL = String.fromCharCode(47);
+      var base = 'https:' + SL + SL + 'lh3.googleusercontent.com' + SL + 'd' + SL;
+      var id = '';
+      var k = url.indexOf('drive.google.com' + SL + 'file' + SL + 'd' + SL);
+      if (k > -1) {
+        id = url.substring(k + 'drive.google.com/file/d/'.length).split(SL)[0].split('?')[0];
+      } else if (url.indexOf('drive.google.com') > -1 && url.indexOf('id=') > -1) {
+        id = url.substring(url.indexOf('id=') + 3).split('&')[0];
+      }
+      return id ? base + id : url;
     }
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

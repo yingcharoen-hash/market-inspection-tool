@@ -76,7 +76,7 @@ function doPost(e) {
 
   // ล้าง cache ทั้งหมดเมื่อมีข้อมูลใหม่
   const cache = CacheService.getScriptCache();
-  cache.removeAll(['data_90d_chunks','data_all_chunks',
+  cache.removeAll(['data_90d_chunks','data_all_chunks','data_pending_chunks','data_pending_v2_chunks','data_admin_v3_chunks',
     'data_90d_0','data_90d_1','data_90d_2','data_90d_3','data_90d_4',
     'data_all_0','data_all_1','data_all_2','data_all_3','data_all_4']);
 
@@ -125,12 +125,59 @@ function doGet(e) {
 
     const result = JSON.stringify({rows});
 
-    // บันทึก chunked cache (90KB ต่อ chunk)
-    const CHUNK = 90000;
+    // บันทึก chunked cache (20KB ต่อ chunk ป้องกัน error ภาษาไทย)
+    const CHUNK = 20000;
     const n = Math.ceil(result.length / CHUNK);
     const cacheObj = {[cacheKey+'_chunks']: String(n)};
     for (let i=0;i<n;i++) cacheObj[cacheKey+'_'+i] = result.slice(i*CHUNK,(i+1)*CHUNK);
     try { cache.putAll(cacheObj, 300); } catch(_) {}
+
+    return ContentService.createTextOutput(result).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // ── action=pending: ดึงเฉพาะข้อมูลพบการรุกล้ำ (รวดเร็วกว่า) ──
+  if (action === 'pending') {
+    const cacheKey = 'data_pending_v2';
+    const cache = CacheService.getScriptCache();
+    
+    const chunkCount = parseInt(cache.get(cacheKey + '_chunks') || '0');
+    if (chunkCount > 0) {
+      const keys = Array.from({length: chunkCount}, (_, i) => cacheKey + '_' + i);
+      const chunks = cache.getAll(keys);
+      const combined = keys.map(k => chunks[k] || '').join('');
+      if (combined) return ContentService.createTextOutput(combined).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const sheet = ss.getSheets()[0];
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return ContentService.createTextOutput('{"rows":[]}').setMimeType(ContentService.MimeType.JSON);
+
+    const lastCol = sheet.getLastColumn();
+    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    const dataRows = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+    const statusIdx = headers.indexOf('ผลตรวจ');
+
+    const allPending = [];
+    for (let i = 0; i < dataRows.length; i++) {
+      const row = dataRows[i];
+      const statusVal = statusIdx > -1 ? row[statusIdx] : '';
+      if (statusVal === 'พบการรุกล้ำ' || statusVal === 'ไม่ผ่าน') {
+         const obj = {};
+         headers.forEach((h, colIdx) => { 
+           let v = row[colIdx]; 
+           if(v instanceof Date) v = v.toISOString(); 
+           obj[h] = v; 
+         });
+         allPending.push(obj);
+      }
+    }
+
+    const result = JSON.stringify({rows: allPending});
+    const CHUNK = 20000;
+    const n = Math.ceil(result.length / CHUNK);
+    const cacheObj = {[cacheKey+'_chunks']: String(n)};
+    for (let i=0;i<n;i++) cacheObj[cacheKey+'_'+i] = result.slice(i*CHUNK,(i+1)*CHUNK);
+    try { cache.putAll(cacheObj, 300); } catch(e) {}
 
     return ContentService.createTextOutput(result).setMimeType(ContentService.MimeType.JSON);
   }
@@ -224,30 +271,9 @@ function doGet(e) {
 
   // ── action=admin: โหลดหน้าเว็บสำหรับฝ่ายขาย (Web App) ──
   if (action === 'admin') {
-    const email = Session.getActiveUser().getEmail();
-    const adminSheet = ss.getSheetByName("Admin_Users");
-    let isAdmin = false;
-    
-    if (adminSheet) {
-      const lastR = adminSheet.getLastRow();
-      if (lastR > 1) {
-        const admins = adminSheet.getRange(2, 1, lastR - 1, 1).getValues().map(r => String(r[0]).trim());
-        isAdmin = admins.includes(email);
-      }
-    } else {
-      isAdmin = true; 
-    }
-
-    if (!isAdmin) {
-      return HtmlService.createHtmlOutput('<h2>Access Denied</h2><p>อีเมล ' + email + ' ไม่มีสิทธิ์เข้าถึงหน้านี้ โปรดแจ้งผู้ดูแลระบบ</p>');
-    }
-    
     const tpl = HtmlService.createTemplateFromFile('SalesAdmin');
-    try {
-      tpl.initialData = getPendingActions();
-    } catch(err) {
-      tpl.initialData = JSON.stringify({ error: err.message });
-    }
+    tpl.serverEmail = Session.getActiveUser().getEmail() || '';
+    
     return tpl.evaluate()
       .setTitle('ระบบจัดการบทลงโทษ')
       .addMetaTag('viewport', 'width=device-width, initial-scale=1')
@@ -271,52 +297,122 @@ function getOrCreateFolder(name) {
 
 // ── ฟังก์ชันสำหรับ Web App ฝ่ายขาย ──
 
-// ดึงข้อมูลสำหรับตารางฝ่ายขาย
-function getPendingActions(offset = 0, limit = 500) {
+function getPendingData() {
   try {
-    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
-    const lastRow = sheet.getLastRow();
-    const lastCol = sheet.getLastColumn();
-    if (lastRow < 2) return JSON.stringify({rows:[], hasMore: false, total: 0});
+    return getPendingData_();
+  } catch (err) {
+    return JSON.stringify({ rows: [], error: String(err && err.message || err) });
+  }
+}
 
-    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-    // อ่านทั้งหมดเลย เพราะ getValues เร็วมาก (ปัญหาอยู่ที่ตอนส่ง JSON กลับ)
-    const dataRows = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
-
-    const statusIdx = headers.indexOf('ผลตรวจ');
-    const penaltyIdx = headers.indexOf('สถานะบทลงโทษ');
-
-    const allPending = [];
-    for (let i = 0; i < dataRows.length; i++) {
-      const row = dataRows[i];
-      const statusVal = statusIdx > -1 ? row[statusIdx] : '';
-      const penaltyVal = penaltyIdx > -1 ? row[penaltyIdx] : '';
-      
-      if (statusVal === 'พบการรุกล้ำ' || statusVal === 'ไม่ผ่าน') {
-         allPending.push(row);
-      }
+function getPendingData_() {
+  const cacheKey = 'data_admin_v3';
+  const cache = CacheService.getScriptCache();
+  
+  const chunkCount = parseInt(cache.get(cacheKey + '_chunks') || '0');
+  if (chunkCount > 0) {
+    const keys = Array.from({length: chunkCount}, (_, i) => cacheKey + '_' + i);
+    const chunks = cache.getAll(keys);
+    // ใช้ cache เฉพาะเมื่อครบทุก chunk เท่านั้น (ป้องกัน JSON ขาด)
+    if (keys.every(k => chunks[k] != null)) {
+      return keys.map(k => chunks[k]).join('');
     }
+  }
 
-    // ตัดแบ่งข้อมูลตาม offset และ limit
-    const slice = allPending.slice(offset, offset + limit);
-    const rows = [];
-    for (const row of slice) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return '{"rows":[]}';
+
+  const startRow = Math.max(2, lastRow - 3000);
+  const numRows = lastRow - startRow + 1;
+
+  const lastCol = sheet.getLastColumn();
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const dataRows = sheet.getRange(startRow, 1, numRows, lastCol).getValues();
+  const statusIdx = headers.indexOf('ผลตรวจ');
+
+  const allPending = [];
+  for (let i = 0; i < dataRows.length; i++) {
+    const row = dataRows[i];
+    const statusVal = statusIdx > -1 ? row[statusIdx] : '';
+    if (statusVal === 'พบการรุกล้ำ' || statusVal === 'ไม่ผ่าน') {
        const obj = {};
        headers.forEach((h, colIdx) => { 
          let v = row[colIdx]; 
          if(v instanceof Date) v = v.toISOString(); 
          obj[h] = v; 
        });
-       rows.push(obj);
+       allPending.push(obj);
     }
-    
-    return JSON.stringify({ 
-      rows: rows, 
-      hasMore: (offset + limit) < allPending.length,
-      total: allPending.length
-    });
+  }
+
+  const result = JSON.stringify({rows: allPending});
+  const CHUNK = 20000;
+  const n = Math.ceil(result.length / CHUNK);
+  const cacheObj = {[cacheKey+'_chunks']: String(n)};
+  for (let i=0;i<n;i++) cacheObj[cacheKey+'_'+i] = result.slice(i*CHUNK,(i+1)*CHUNK);
+  try { cache.putAll(cacheObj, 300); } catch(e) {}
+
+  return result;
+}
+
+// ดึงข้อมูลพบการรุกล้ำตามช่วงวันที่ (ค้นทั้งชีท) — startStr/endStr รูปแบบ 'yyyy-MM-dd' (เวลาไทย)
+function getPendingDataByRange(startStr, endStr) {
+  try {
+    const MAX_ROWS = 10000;
+    const startMs = startStr ? new Date(startStr + 'T00:00:00+07:00').getTime() : -Infinity;
+    const endMs = endStr ? new Date(endStr + 'T23:59:59.999+07:00').getTime() : Infinity;
+
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return JSON.stringify({ headers: [], data: [] });
+
+    const lastCol = sheet.getLastColumn();
+    const values = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+    const headers = values[0];
+    const statusIdx = headers.indexOf('ผลตรวจ');
+    const tsIdx = headers.indexOf('เวลาบันทึก');
+    const dateIdx = headers.indexOf('วันที่');
+
+    const data = [];
+    for (let i = 1; i < values.length; i++) {
+      const row = values[i];
+      const st = row[statusIdx];
+      if (st !== 'พบการรุกล้ำ' && st !== 'ไม่ผ่าน') continue;
+      let d = tsIdx > -1 ? row[tsIdx] : null;
+      if (!(d instanceof Date)) d = dateIdx > -1 ? row[dateIdx] : null;
+      if (!(d instanceof Date)) d = new Date(d);
+      const t = d.getTime();
+      if (!isNaN(t) && (t < startMs || t > endMs)) continue;
+      data.push(row.map(v => (v instanceof Date ? v.toISOString() : v)));
+    }
+
+    let truncated = false;
+    if (data.length > MAX_ROWS) { data.splice(0, data.length - MAX_ROWS); truncated = true; }
+    return JSON.stringify({ headers: headers, data: data, truncated: truncated });
   } catch (err) {
-    return JSON.stringify({ error: err.message, stack: err.stack });
+    return JSON.stringify({ headers: [], data: [], error: String(err && err.message || err) });
+  }
+}
+
+// ตรวจสอบสิทธิ์อีเมลของฝ่ายขายกับแท็บ Admin_Users ใน Google Sheet
+function checkAdminUser(email) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const adminSheet = ss.getSheetByName("Admin_Users");
+    if (!adminSheet) return { allowed: true, msg: "no_sheet" };
+    const lastR = adminSheet.getLastRow();
+    if (lastR <= 1) return { allowed: true, msg: "no_data" };
+    
+    const emails = adminSheet.getRange(2, 1, lastR - 1, 1).getValues()
+      .map(r => String(r[0]).trim().toLowerCase())
+      .filter(Boolean);
+      
+    const inputEmail = String(email || '').trim().toLowerCase();
+    const isAllowed = emails.includes(inputEmail);
+    return { allowed: isAllowed, email: inputEmail };
+  } catch(e) {
+    return { allowed: false, error: e.message };
   }
 }
 
@@ -358,18 +454,18 @@ function updateResolutionData(payload) {
       linkUrl = saveImage(payload.photoBase64, "Evidence_" + Date.now(), folder) || "";
     }
 
-    const email = Session.getActiveUser().getEmail();
+    const operator = payload.operatorEmail || Session.getActiveUser().getEmail() || 'ฝ่ายขาย';
     
     sheet.getRange(targetRow, actionCol + 1).setValue(payload.penaltyStep);
     sheet.getRange(targetRow, actionCol + 2).setValue(payload.note);
-    sheet.getRange(targetRow, actionCol + 3).setValue(email);
+    sheet.getRange(targetRow, actionCol + 3).setValue(operator);
     sheet.getRange(targetRow, actionCol + 4).setValue(new Date());
     if (linkUrl) {
       sheet.getRange(targetRow, actionCol + 5).setValue(linkUrl);
     }
     
     const cache = CacheService.getScriptCache();
-    cache.removeAll(['data_90d_chunks','data_all_chunks']);
+    cache.removeAll(['data_90d_chunks','data_all_chunks','data_pending_chunks','data_pending_v2_chunks','data_admin_v3_chunks']);
     
     return { success: true };
   }
