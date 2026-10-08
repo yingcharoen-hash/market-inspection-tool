@@ -185,6 +185,10 @@
     </select>
       <select id="encTypeFilter" onchange="render()" style="margin-left:10px;"><option value="">ประเภทรุกล้ำ: ทั้งหมด</option></select>
   </div>
+  <div class="fi">
+    <label>โซน</label>
+    <select id="zoneFilter" onchange="render()"><option value="">ทั้งหมด</option></select>
+  </div>
 </div>
 
 <div class="main" id="main">
@@ -441,6 +445,14 @@ async function loadData() {
     const encTypes = [...new Set(allData.map(r => r[C.encType]).filter(Boolean))].sort();
     const encFilterEl = document.getElementById('encTypeFilter');
     encFilterEl.innerHTML = '<option value="">ประเภทรุกล้ำ: ทั้งหมด</option>' + encTypes.map(t => `<option value="${t}">${t}</option>`).join('');
+    // รายชื่อโซน: เริ่มจาก KNOWN_ZONES แล้วตามด้วยโซนอื่นที่พบในข้อมูล
+    const zoneSet = new Set(allData.map(r => r[C.location]).filter(Boolean));
+    const zoneList = KNOWN_ZONES.filter(z => zoneSet.has(z))
+      .concat([...zoneSet].filter(z => !KNOWN_ZONES.includes(z)).sort((a,b)=>a.localeCompare(b,'th')));
+    const zoneEl = document.getElementById('zoneFilter');
+    const prevZone = zoneEl.value;
+    zoneEl.innerHTML = '<option value="">ทั้งหมด</option>' + zoneList.map(z => `<option value="${z}">${z}</option>`).join('');
+    if (zoneList.includes(prevZone)) zoneEl.value = prevZone;
 
     document.getElementById('lastUpdate').textContent =
       'อัปเดต ' + new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'});
@@ -489,12 +501,14 @@ function getFiltered() {
   const dateEnd   = document.getElementById('dateEnd').value;
   const sec       = document.getElementById('sectionFilter').value;
   const encType   = document.getElementById('encTypeFilter').value;
+  const zone      = document.getElementById('zoneFilter').value;
   document.getElementById('encTypeFilter').style.display = (!sec || sec === '1. ตรวจรุกล้ำ') ? 'inline-block' : 'none';
   return allData.filter(r => {
     if (dateStart && r._d < dateStart) return false;
     if (dateEnd   && r._d > dateEnd)   return false;
     if (sec       && r[C.section] !== sec)  return false;
     if (encType   && r[C.encType] !== encType) return false;
+    if (zone      && r[C.location] !== zone) return false;
     return true;
   });
 }
@@ -686,7 +700,14 @@ function renderEncTypeChart(badRows) {
       layout: { padding: { top: 30 } },
       plugins: {
         legend: { display: false },
-        datalabels: { color: '#B71C1C', anchor: 'end', align: 'top', offset: 2, font: { weight: 'bold', size: 12 }, formatter: v => v + ' รายการ' }
+        datalabels: {
+          color: '#B71C1C', anchor: 'end', align: 'top', offset: 2,
+          font: { weight: 'bold', size: 12 },
+          formatter: v => {
+            const pct = ((v / encRows.length) * 100).toFixed(1);
+            return v + ' รายการ (' + pct + '%)';
+          }
+        }
       },
       scales: {
         x: { grid: { display: false } },
@@ -800,7 +821,9 @@ function renderZoneChart(badRows, allRows) {
 // ── Trend chart ───────────────────────────────
 function renderTrendChart() {
   const cnt = {};
-  allData.filter(isProblem).forEach(r=>{ if(r._d) cnt[r._d]=(cnt[r._d]||0)+1; });
+  const zoneSel = document.getElementById('zoneFilter').value;
+  const trendRows = allData.filter(r => isProblem(r) && (!zoneSel || r[C.location] === zoneSel));
+  trendRows.forEach(r=>{ if(r._d) cnt[r._d]=(cnt[r._d]||0)+1; });
   const sorted = Object.entries(cnt).sort((a,b)=>a[0].localeCompare(b[0]));
   if (!sorted.length) return;
   charts.trend = new Chart(document.getElementById('chartTrend').getContext('2d'), {
@@ -819,7 +842,7 @@ function renderTrendChart() {
       onClick(evt, elements) {
         if (!elements.length) return;
         const dateKey = sorted[elements[0].index][0];
-        const dayRows = allData.filter(r=>isProblem(r)&&r._d===dateKey)
+        const dayRows = trendRows.filter(r=>r._d===dateKey)
           .sort((a,b)=>(a[C.date]||'').localeCompare(b[C.date]||''));
         openModal(displayDate(dateKey), `พบปัญหา ${dayRows.length} รายการ`, dayRows);
       }
