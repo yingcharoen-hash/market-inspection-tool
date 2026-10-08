@@ -899,7 +899,10 @@ function renderHeatmap(rows) {
 // ── Heatmap: zone × round (encroachment) ─────
 function renderHeatmapEnc(rows, el) {
   const encRows = rows.filter(r => r[C.section] === '1. ตรวจรุกล้ำ');
-  const zones = [...new Set(allData.filter(r => r[C.section] === '1. ตรวจรุกล้ำ').map(r => r[C.location]).filter(Boolean))].sort();
+  const zoneFilter = document.getElementById('zoneFilter').value;
+  const zones = zoneFilter
+    ? [zoneFilter]
+    : [...new Set(allData.filter(r => r[C.section] === '1. ตรวจรุกล้ำ').map(r => r[C.location]).filter(Boolean))].sort();
   const rounds = KNOWN_ROUNDS;
 
   const lookup = {};
@@ -965,7 +968,10 @@ function renderHeatmapItems(rows, el, secKey, knownZones, knownItems, badStatus,
   });
 
   // Dynamically extract all historical zones for this section
-  const activeZones = [...new Set(allData.filter(r => r[C.section] === secKey).map(r => r[C.location]).filter(Boolean))].sort();
+  const zoneFilter = document.getElementById('zoneFilter').value;
+  const activeZones = zoneFilter
+    ? [zoneFilter]
+    : [...new Set(allData.filter(r => r[C.section] === secKey).map(r => r[C.location]).filter(Boolean))].sort();
   if (!activeZones.length) { el.innerHTML = '<div class="msg">ไม่มีข้อมูลในหมวดนี้</div>'; return; }
 
   let html = `<div class="heatmap-wrap"><table class="heatmap-table">
@@ -1061,7 +1067,10 @@ function renderRoundCompletionByZone(rows, el, secKey, knownZones) {
   if (!secRows.length) { el.innerHTML = '<div class="msg">ไม่มีข้อมูล</div>'; return; }
 
   const guards = [...new Set(secRows.map(r => r[C.guard]).filter(Boolean))].sort();
-  const zones = [...new Set(allData.filter(r => r[C.section] === secKey).map(r => r[C.location]).filter(Boolean))].sort();
+  const zoneFilter = document.getElementById('zoneFilter').value;
+  const zones = zoneFilter
+    ? [zoneFilter]
+    : [...new Set(allData.filter(r => r[C.section] === secKey).map(r => r[C.location]).filter(Boolean))].sort();
 
   const guardZones = {};
   secRows.forEach(r => {
