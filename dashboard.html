@@ -5,6 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ตลาดยิ่งเจริญ — Dashboard ตรวจตลาด</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
   <style>
@@ -23,7 +26,16 @@
       --sub:         #6B6B66;
       --border:      #E0DDD5;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+    body {
+      font-family: 'Prompt', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
 
     /* Top bar */
     .topbar { background: var(--green); color: #fff; padding: 0 20px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
@@ -73,10 +85,11 @@
     .sec-num-label { font-size: 11px; color: var(--sub); margin-top: 3px; }
 
     /* Cards */
-    .card { background: var(--card); border-radius: 6px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.07); overflow: hidden; }
-    .card-head { padding: 11px 16px; border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: .5px; display: flex; justify-content: space-between; align-items: center; }
-    .card-head-note { font-weight: 400; color: var(--sub); text-transform: none; letter-spacing: 0; font-size: 11px; }
-    .chart-wrap { position: relative; height: 200px; padding: 14px; }
+    .card { background: var(--card); border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; }
+    .card-head { padding: 13px 18px; border-bottom: 1px solid var(--border); font-size: 16px; font-weight: 700; color: var(--green); letter-spacing: .2px; display: flex; justify-content: space-between; align-items: center; }
+    .card-head-note { font-weight: 400; color: var(--sub); text-transform: none; letter-spacing: 0; font-size: 13px; }
+    .click-hint { font-size: 13px; color: var(--sub); font-weight: 400; text-transform: none; letter-spacing: 0; }
+    .chart-wrap { position: relative; height: 210px; padding: 14px; }
 
     .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
     @media (max-width: 700px) { .chart-row { grid-template-columns: 1fr; } }
@@ -134,7 +147,6 @@
     .modal-body thead th { position: sticky; top: 0; }
     .photo-link { display: inline-block; padding: 2px 8px; background: var(--green-light); color: var(--green); border-radius: 3px; font-size: 11px; font-weight: 700; text-decoration: none; margin-right: 4px; }
     .photo-link:hover { background: var(--green); color: #fff; }
-    .click-hint { font-size: 11px; color: var(--sub); font-weight: 400; text-transform: none; letter-spacing: 0; }
   </style>
 </head>
 <body>
@@ -197,6 +209,11 @@
 
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3N1gxp9Gf94x-dXNbqgzUpirfQuy44YO6-rgcnS_OTVdAzp5Nw10cigkCcoy_uNlu/exec";
+
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.font.family = "'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+  Chart.defaults.color = '#2F3640';
+}
 
 // โซนและรอบเวลาคงที่ — ต้องตรงกับ ZONES1 และ ROUNDS ใน index.html
 const KNOWN_ZONES  = [
@@ -728,7 +745,7 @@ function renderEncTypeChart(badRows) {
         legend: { display: false },
         datalabels: {
           color: '#B71C1C', anchor: 'end', align: 'top', offset: 2,
-          font: { weight: 'bold', size: 12 },
+          font: { weight: '600', size: 13 },
           formatter: v => {
             const pct = ((v / encRows.length) * 100).toFixed(1);
             return v + ' รายการ (' + pct + '%)';
@@ -736,7 +753,7 @@ function renderEncTypeChart(badRows) {
         }
       },
       scales: {
-        x: { grid: { display: false } },
+        x: { grid: { display: false }, ticks: { font: { size: 12, weight: '500' }, color: '#2F3640' } },
         y: { grace: '15%', grid: { display: false }, border: { display: false }, ticks: { display: false } }
       },
       onClick: (e, els) => {
@@ -786,8 +803,8 @@ function renderPenaltyChart(badRows) {
       plugins: {
         legend: { display: false },
         datalabels: { 
-          color: '#333', anchor: 'end', align: 'top', offset: 2, 
-          font: { weight: 'bold', size: 12 }, 
+          color: '#2F3640', anchor: 'end', align: 'top', offset: 2, 
+          font: { weight: '600', size: 13 }, 
           formatter: v => {
             const pct = ((v / badRows.length) * 100).toFixed(1);
             return v + ' รายการ (' + pct + '%)';
@@ -795,7 +812,7 @@ function renderPenaltyChart(badRows) {
         }
       },
       scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        x: { grid: { display: false }, ticks: { font: { size: 12, weight: '500' }, color: '#2F3640' } },
         y: { grace: '15%', grid: { display: false }, border: { display: false }, ticks: { display: false } }
       },
       onClick: (e, els) => {
@@ -830,9 +847,9 @@ function renderZoneChart(badRows, allRows) {
       plugins:{ 
         legend:{display:false}, 
         tooltip:{callbacks:{label:c=>` ${c.parsed.x} ครั้ง`}},
-        datalabels: { color: '#333', anchor: 'end', align: 'right', offset: 4, font: { weight: 'bold', size: 11 }, formatter: v => v + ' รายการ' }
+        datalabels: { color: '#2F3640', anchor: 'end', align: 'right', offset: 4, font: { weight: '600', size: 12 }, formatter: v => v + ' รายการ' }
       },
-      scales:{ x:{grace: '15%', ticks:{stepSize:1,font:{size:11}},grid:{color:'#F0EDE7'}}, y:{ticks:{font:{size:11}},grid:{display:false}} },
+      scales:{ x:{grace: '15%', ticks:{stepSize:1,font:{size:12}, color: '#2F3640'},grid:{color:'#F0EDE7'}}, y:{ticks:{font:{size:12, weight: '500'}, color: '#2F3640'},grid:{display:false}} },
       onClick(evt, elements) {
         if (!elements.length) return;
         const zone = sorted[elements[0].index][0];
@@ -864,7 +881,7 @@ function renderTrendChart() {
         tooltip:{callbacks:{label:c=>` ${c.parsed.y} ครั้ง`}},
         datalabels: { display: false }
       },
-      scales:{ y:{beginAtZero:true,ticks:{stepSize:1,font:{size:11}},grid:{color:'#F0EDE7'}}, x:{ticks:{font:{size:10}},grid:{display:false}} },
+      scales:{ y:{beginAtZero:true,ticks:{stepSize:1,font:{size:12}, color: '#2F3640'},grid:{color:'#F0EDE7'}}, x:{ticks:{font:{size:11}, color: '#2F3640'},grid:{display:false}} },
       onClick(evt, elements) {
         if (!elements.length) return;
         const dateKey = sorted[elements[0].index][0];
