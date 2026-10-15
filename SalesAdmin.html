@@ -19,13 +19,36 @@
     .btn:hover { background: #2D7A50; }
     
     /* Modal Styles */
-    .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-    .modal-content { background-color: #fff; margin: 5% auto; padding: 20px; border-radius: 8px; width: 500px; max-width: 90%; }
-    .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-    .close:hover { color: #000; }
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; }
-    .form-group select, .form-group input[type="text"] { width: 100%; padding: 8px; border: 1px solid #dcdde1; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.55);
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-sizing: border-box;
+      -webkit-overflow-scrolling: touch;
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 20px auto 60px auto;
+      padding: 22px 24px;
+      border-radius: 12px;
+      width: 520px;
+      max-width: 92%;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+      box-sizing: border-box;
+      position: relative;
+    }
+    .close { color: #888; float: right; font-size: 26px; font-weight: bold; cursor: pointer; line-height: 20px; transition: color 0.2s; }
+    .close:hover { color: #d63031; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 13px; color: #2d3436; }
+    .form-group select, .form-group input[type="text"] { width: 100%; padding: 8px 10px; border: 1px solid #dcdde1; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -131,7 +154,7 @@
         <input type="file" id="evidenceFile" accept="image/*,application/pdf">
       </div>
 
-      <button class="btn" style="width:100%; padding:10px; margin-top:10px;" onclick="submitAction()">บันทึกข้อมูล</button>
+      <button class="btn" style="width:100%; padding:12px; margin-top:12px; font-size:14px; font-weight:bold; border-radius:6px; background:#1B5E3B;" onclick="submitAction()">บันทึกข้อมูล</button>
     </div>
   </div>
 
@@ -428,8 +451,8 @@
       const p1 = targetRow['รูปภาพ1'] || targetRow['รูปภาพ 1'] || targetRow['รูปที่ 1'] || targetRow['รูปภาพ'];
       const p2 = targetRow['รูปภาพ2'] || targetRow['รูปภาพ 2'] || targetRow['รูปที่ 2'];
       let photoHtml = '';
-      if(p1) photoHtml += `<a href="${p1}" target="_blank"><img src="${getImgSrc(p1)}" style="width:100px; height:100px; object-fit:cover; border-radius:4px; margin:0 5px; border:1px solid #ddd;"></a>`;
-      if(p2) photoHtml += `<a href="${p2}" target="_blank"><img src="${getImgSrc(p2)}" style="width:100px; height:100px; object-fit:cover; border-radius:4px; margin:0 5px; border:1px solid #ddd;"></a>`;
+      if(p1) photoHtml += `<a href="${p1}" target="_blank"><img src="${getImgSrc(p1)}" style="width:85px; height:85px; object-fit:cover; border-radius:6px; margin:0 5px; border:1px solid #ddd; box-shadow:0 1px 3px rgba(0,0,0,0.1);"></a>`;
+      if(p2) photoHtml += `<a href="${p2}" target="_blank"><img src="${getImgSrc(p2)}" style="width:85px; height:85px; object-fit:cover; border-radius:6px; margin:0 5px; border:1px solid #ddd; box-shadow:0 1px 3px rgba(0,0,0,0.1);"></a>`;
       
       if(photoHtml === '') photoHtml = '<span style="font-size:12px; color:#999;">(ไม่มีรูปภาพแนบจากผู้ตรวจ)</span>';
       document.getElementById('modalPhotoContainer').innerHTML = photoHtml;
@@ -447,19 +470,19 @@
           const parts = val.split(' ');
           const dParts = parts[0].split('/');
           if (dParts.length === 3) {
-             let day = parseInt(dParts[0]);
-             let month = parseInt(dParts[1]) - 1;
-             let year = parseInt(dParts[2]);
-             if (year > 2400) year -= 543;
-             let h = 0, m = 0;
-             if (parts[1]) {
-                const tParts = parts[1].split(':');
-                if (tParts.length >= 2) {
-                   h = parseInt(tParts[0]);
-                   m = parseInt(tParts[1]);
-                }
-             }
-             return new Date(year, month, day, h, m).getTime();
+            let day = parseInt(dParts[0]);
+            let month = parseInt(dParts[1]) - 1;
+            let year = parseInt(dParts[2]);
+            if (year > 2400) year -= 543;
+            let h = 0, m = 0;
+            if (parts[1]) {
+               const tParts = parts[1].split(':');
+               if (tParts.length >= 2) {
+                  h = parseInt(tParts[0]);
+                  m = parseInt(tParts[1]);
+               }
+            }
+            return new Date(year, month, day, h, m).getTime();
           }
         }
         return 0;
@@ -473,9 +496,9 @@
       });
       
       if(hist.length > 0) {
-        let hHtml = '<div style="background:#fff3cd; padding:8px; border-radius:4px; font-size:12px; margin-bottom:15px; border-left:3px solid #ffc107;">';
+        let hHtml = '<div style="background:#fff3cd; padding:8px 10px; border-radius:6px; font-size:12px; margin-bottom:12px; border-left:3px solid #ffc107;">';
         hHtml += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;"><b>⚠️ ประวัติการรุกล้ำ:</b> <div><span style="font-size:10px;">พิมพ์ตั้งแต่วันที่:</span> <input type="date" id="printStart" style="font-size:10px;padding:1px;border-radius:2px;border:1px solid #ccc;"> - <input type="date" id="printEnd" style="font-size:10px;padding:1px;border-radius:2px;border:1px solid #ccc;"> <button onclick="printHistory()" type="button" style="background:#fff; border:1px solid #ccc; border-radius:3px; padding:2px 6px; cursor:pointer; font-size:11px;">🖨️ พิมพ์</button></div></div>';
-        hHtml += '<div id="historyPrintArea" style="max-height:150px; overflow-y:auto; background:#fff; border:1px solid #ffe69c; padding:0;"><table style="width:100%; border-collapse:collapse; font-size:11px;">';
+        hHtml += '<div id="historyPrintArea" style="max-height:120px; overflow-y:auto; background:#fff; border:1px solid #ffe69c; padding:0;"><table style="width:100%; border-collapse:collapse; font-size:11px;">';
         hHtml += '<thead style="background:#fdf5e6; position:sticky; top:0;"><tr><th style="padding:4px 6px;border-bottom:1px solid #ddd;text-align:left;">วันที่</th><th style="padding:4px 6px;border-bottom:1px solid #ddd;text-align:left;">รายการ</th><th style="padding:4px 6px;border-bottom:1px solid #ddd;text-align:left;">สถานะ</th></tr></thead><tbody>';
         hist.forEach(h => {
            let t = parseDateStr(h['เวลาบันทึก']) || parseDateStr(h['วันที่']);
@@ -615,6 +638,14 @@
       document.getElementById('actionNote').value = '';
       document.getElementById('evidenceFile').value = '';
     }
+
+    // คลิกพื้นหลังสีดำรอบ modal เพื่อปิดได้
+    window.addEventListener('click', function(event) {
+      const actionModal = document.getElementById('actionModal');
+      if (event.target === actionModal) {
+        closeModal();
+      }
+    });
 
     function submitAction() {
       const step = document.getElementById('penaltyStep').value;
